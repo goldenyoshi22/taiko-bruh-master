@@ -1,0 +1,20 @@
+@font-face {
+  font-family: 'pixel';
+  font-style: normal;
+  font-weight: 400;
+  src: url(JF-Dot-MPlus12.ttf) format('truetype');
+}
+
+@font-face {
+  font-family: 'pixel2';
+  font-style: normal;
+  font-weight: 400;
+  src: url(JF-Dot-MPlusQ10.ttf) format('truetype');
+}
+
+body {
+font-family: monospace;
+background-color: black;
+color: #FF0000;
+font-size: 15px;
+}

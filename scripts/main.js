@@ -174,7 +174,7 @@ cv.text("(controls are DFJK.)", `#FFFFFFA0`, 768, 600, "pixel", "40", "center");
 
 cv.text(tips[tipnum], ["#FF8080", "#80FFFF"], 768, 715, "pixel2", "35", "center")
 
-cv.text("α.0.0:1\nhttps://discord.gg/2D2XbD77HD", "#DDDDDD50", 0, 30, "monospace", "25", "left");
+cv.text("α.0.0:2\nhttps://discord.gg/2D2XbD77HD", "#DDDDDD50", 0, 30, "monospace", "25", "left");
 break;
 
 //song select
@@ -735,7 +735,15 @@ setTimeout(() => {
 }, 100)
 
 let activation = setInterval(() => {
+if (navigator.userActivation != undefined) {
 if (navigator.userActivation.isActive) {
+	mode = 0;
+	selected.song = Math.floor(Math.random() * songdata.length)
+	setTimeout(() => {soundManager.setVolume(selected.settings.volume); songaudios[selected.song].play()}, 500)
+	setTimeout(() => {window.requestAnimationFrame(update)}, 500);
+	clearInterval(activation);
+}
+} else {
 	mode = 0;
 	selected.song = Math.floor(Math.random() * songdata.length)
 	setTimeout(() => {soundManager.setVolume(selected.settings.volume); songaudios[selected.song].play()}, 500)

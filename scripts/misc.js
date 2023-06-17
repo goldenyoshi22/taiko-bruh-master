@@ -46,16 +46,56 @@ function numtobase(num, base) {
 	return num.toString(base)
 }
 
-function lineOf(strg, need) {
-	let index = strg.indexOf(need);
+function nthIndexOf(string, pattern, n) {
+    var i = -1;
+
+    while (n-- && i++ < string.length) {
+        i = string.indexOf(pattern, i);
+        if (i < 0) break;
+    }
+
+    return i;
+}
+
+function lineOf(strg, need, num=1) {
+	let index = nthIndexOf(strg, need, num);
+	if (index == -1) return 0;
 	let piece = strg.substring(0, index);
 	return piece.split('\n').length;
 }
 
-function mdValue(metadata, chart) {
-	if (chart.search(RegExp(`${metadata}`, "gm")) == -1) {console.log(`No ${metadata} found.`); return "";}
-	else return chart.split("\n")[lineOf(chart, metadata) - 1].split(chart.split("\n")[lineOf(chart, metadata) - 1].includes(":") ? ":" : " ")[1].replace(/\n/g, "")
+function mdValue(metadata, chart, num = 1, arra = false, log = false) {
+  const lines = chart.split("\n");
+  const regexF = RegExp(metadata, "gm");
+
+  if (!arra) {
+    const lineIndex = lineOf(chart, metadata, num);
+    if (lineIndex <= 0 || chart.search(regexF) < num) {
+      if (log) console.log(`No ${metadata} found.`);
+      return "";
+    }
+    const line = lines[lineIndex - 1];
+    const regexSeparator = line.includes(":") ? ":" : " ";
+    return line.split(regexSeparator)[1].replace(/\n/g, "");
+  }
+
+  const result = [];
+  let i = 1;
+  let current;
+  while ((current = mdValue(metadata, chart, i++))) {
+    const lineIndex = lineOf(chart, metadata, i - 1);
+    if (lineIndex <= 0 || chart.search(regexF) < i - 1) {
+      if (log) console.log(`No ${metadata} found.`);
+      break;
+    }
+    const line = lines[lineIndex - 1];
+    const regexSeparator = line.includes(":") ? ":" : " ";
+    result.push(line.split(regexSeparator)[1].replace(/\n/g, ""));
+  }
+
+  return result.sort((a, b) => parseFloat(a) - parseFloat(b));
 }
+
 
 function extractCourse(course, chart, trimToStart=false) {
 	let loc = chart.indexOf(`COURSE:${course}`)

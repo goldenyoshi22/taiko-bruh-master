@@ -83,10 +83,15 @@ let hits = [0, 0, 0, 0, 0, 0] //good, ok, bad, rolls, combo, maxcombo
 let hitting = 0
 let gogo = false
 let songaudios = []
+let sfxaudios = ["menu1", "menu2", "fail"]
+let songbpms = []
 
 function sload() {
   for (let i = 0; i < songdata.length; i++) {
 	  songaudios.push(soundManager.createSound({url: mdValue("WAVE", songdata[i])}));
+  }
+  for (let i = 0; i < sfxaudios.length; i++) {
+	  sfxaudios[i] = soundManager.createSound({url: `sfx/${sfxaudios[i]}.wav`});
   }
 }
 
@@ -174,7 +179,7 @@ cv.text("(controls are DFJK.)", `#FFFFFFA0`, 768, 600, "pixel", "40", "center");
 
 cv.text(tips[tipnum], ["#FF8080", "#80FFFF"], 768, 715, "pixel2", "35", "center")
 
-cv.text("α.0.0:2\nhttps://discord.gg/2D2XbD77HD", "#DDDDDD50", 0, 30, "monospace", "25", "left");
+cv.text("α.0.0:3\nhttps://discord.gg/2D2XbD77HD", "#DDDDDD50", 0, 30, "monospace", "25", "left");
 break;
 
 //song select
@@ -193,6 +198,8 @@ cv.rect("#00FFFF", 650, 20, 850, 724);
 cv.rect("#000000", 655, 25, 840, 714);
 if(selected.song != -1) {
 cv.text("Length: " + lengthOfTime(songaudios[selected.song].durationEstimate), "#00C0C0", 665, 65, "pixel", "30", "left");
+
+cv.text(`${songbpms[selected.song].length > 1 ? songbpms[selected.song][0] + "-" : ""}${mdValue("BPM", songdata[selected.song])}${songbpms[selected.song].length > 1 ? "-" + songbpms[selected.song][songbpms[selected.song].length-1] : ""} BPM`, "#00C0C0", 1485, 65, "pixel", "30", "right");
 cv.text(mdValue("TITLE", songdata[selected.song]), "#00FFFF", 1075, 150, "pixel", (mdValue("TITLE", songdata[selected.song]).length > 24 ? (69 * (24 / mdValue("TITLE", songdata[selected.song]).length)).toString() : "70"), "center");
 cv.text(mdValue("SUBTITLE", songdata[selected.song]).slice(2), "#00FFFF", 1075, 225, "pixel", "35", "center");
 }
@@ -205,10 +212,11 @@ cv.text("Back", (selected.difficulty != -1 ? "#FFA000" : "#000000"), 770, 635, "
 for (let i = 0; i < 4; i++) {
 	if (selected.song != -1) {
 	if(i == 3 && hasCourse("4", songdata[selected.song]) && uracounter % 20 >= 10) i++;
-	let levelc = parseInt(mdValue("LEVEL", extractCourse(i, songdata[selected.song])));
+	let extractCI = extractCourse(i, songdata[selected.song])
+	let levelc = parseInt(mdValue("LEVEL", extractCI));
 	if (isNaN(levelc)) continue;
-	let hasplus = (!isNaN(parseInt(mdValue("DIFPLUS", extractCourse(i, songdata[selected.song])))) || (mdValue("LEVEL", extractCourse(i, songdata[selected.song])) - levelc) >= 0.75)
-	let hasminus = ((mdValue("LEVEL", extractCourse(i, songdata[selected.song])) - levelc) <= 0.25 && (mdValue("LEVEL", extractCourse(i, songdata[selected.song])) - levelc) != 0);
+	let hasplus = (!isNaN(parseInt(mdValue("DIFPLUS", extractCI))) || (mdValue("LEVEL", extractCI) - levelc) >= 0.75)
+	let hasminus = ((mdValue("LEVEL", extractCI) - levelc) <= 0.25 && (mdValue("LEVEL", extractCI) - levelc) != 0);
 	if(i==4)i=3;
 	cv.rect(difficulties.colors[i], 720 + 180 * i, 400, 165, 165);
 	if (selected.difficulty != i) cv.rect("#000000", 725 + 180 * i, 405, 155, 155);
@@ -499,6 +507,8 @@ class note{
 */
 
 function loadChart(ret=false) {
+	noteQueue = [];
+	rollQueue = [];
 	let chartData = {
 		fullData: songdata[selected.song],
 		course: (selected.difficulty != 3 ? selected.difficulty : (difficulties.names[3] == "Extreme" ? 3 : 4)),
@@ -633,6 +643,7 @@ Mousetrap.bind(controls[0], function() {
 			if (selected.song > -1) {
 				selected.song--;
 				soundManager.stopAll();
+				sfxaudios[1].play();
 				if(selected.song != -1) {
 				songaudios[selected.song].setPosition(parseFloat(mdValue("DEMOSTART", songdata[selected.song]))*1000);
 				songaudios[selected.song].play();
@@ -641,6 +652,7 @@ Mousetrap.bind(controls[0], function() {
 			break;
 			
 			case "difficulty":
+			sfxaudios[1].play();
 			if (selected.difficulty > -1) selected.difficulty--
 			break;
 			}
@@ -653,6 +665,7 @@ Mousetrap.bind([controls[1], controls[2]], function() {
 	if (canSelect) {
 		if (mode == 0) fadetomode(1)
 		if (mode == 1) {
+		sfxaudios[0].play();
 		switch(selected.selection) {
 			case "song":
 			selected.difficulty = 0
@@ -688,12 +701,14 @@ Mousetrap.bind(controls[3], function() {
 			if (selected.song < songdata.length-1) {
 				selected.song++;
 				soundManager.stopAll();
+				sfxaudios[1].play();
 				songaudios[selected.song].setPosition(parseFloat(mdValue("DEMOSTART", songdata[selected.song]))*1000);
 				songaudios[selected.song].play();
 			}
 			break;
 			
 			case "difficulty":
+			sfxaudios[1].play();
 			if (selected.difficulty < 3) selected.difficulty++
 			else {
 			if (hasCourse("4", songdata[selected.song])) uracounter++
@@ -752,3 +767,14 @@ if (navigator.userActivation.isActive) {
 }
 }, 1)
 
+for (let i = 0; i < songdata.length; i++) {
+	songdata[i] = `\n${songdata[i]}`
+	songbpms.push([])
+	songbpms[i].push(mdValue("BPM", songdata[i]));
+	songbpms[i].push(mdValue("#BPMCHANGE", songdata[i], 1, true))
+	if (songbpms[i].length > 1) {
+		console.log(songbpms[i])
+		songbpms[i] = singleArray([[songbpms[i][0]], songbpms[i][1]])
+		songbpms[i] = songbpms[i].sort(function(a, b) {return parseFloat(a) - parseFloat(b)})
+	}
+}

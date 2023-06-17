@@ -110,7 +110,7 @@ let fadetomode = async (m) => {
 	canSelect = true
 	
 	if (mode == 1) {
-		balloon.at = 0; balloon.next = 1; selected.selection = "song"; selected.difficulty = -2; clearGauge[0] = 0; combo = 0; hits = [0, 0, 0, 0, 0, 0]; currentJudgement = ["", ""]; clearShow = false;
+		balloon.at = 0; balloon.next = 1; balloon.hits = 0; balloon.hitQueue = []; selected.selection = "song"; selected.difficulty = -2; clearGauge[0] = 0; combo = 0; hits = [0, 0, 0, 0, 0, 0]; currentJudgement = ["", ""]; clearShow = false;
 		
 		if (uracounter % 20 >= 10) {
 			let a = [difficulties.names[3], difficulties.colors[3]];
@@ -174,7 +174,7 @@ cv.text("(controls are DFJK.)", `#FFFFFFA0`, 768, 600, "pixel", "40", "center");
 
 cv.text(tips[tipnum], ["#FF8080", "#80FFFF"], 768, 715, "pixel2", "35", "center")
 
-cv.text("α.0.0\nhttps://discord.gg/2D2XbD77HD", "#DDDDDD50", 0, 30, "monospace", "25", "left");
+cv.text("α.0.0:1\nhttps://discord.gg/2D2XbD77HD", "#DDDDDD50", 0, 30, "monospace", "25", "left");
 break;
 
 //song select
@@ -368,13 +368,13 @@ if (noteQueue[0] != undefined) {
 		hits[4] = 0;
 			switch (clearGauge[1]) {
 				case "Beginner":
-					clearGauge[0] -= (150 / songNotes)
+					clearGauge[0] -= (133.333 / songNotes)
 				break;
 				case "Easy":
-					clearGauge[0] -= (150 / songNotes)
+					clearGauge[0] -= (133.333 / songNotes)
 				break;
 				case "Normal":
-					clearGauge[0] -= (150 / songNotes)
+					clearGauge[0] -= (133.333 / songNotes)
 				break;
 				case "Hard":
 					clearGauge[0] -= (10/3)
@@ -410,10 +410,10 @@ if (hitting != 0) {
 					clearGauge[0] += (200 / songNotes)
 				break;
 				case "Easy":
-					clearGauge[0] += (175 / songNotes)
+					clearGauge[0] += (166.666 / songNotes)
 				break;
 				case "Normal":
-					clearGauge[0] += (150 / songNotes)
+					clearGauge[0] += (133.333 / songNotes)
 				break;
 				case "Hard":
 					if (clearGauge[0] != 0) clearGauge[0] += 0.075
@@ -432,10 +432,10 @@ if (hitting != 0) {
 					clearGauge[0] += (100 / songNotes)
 				break;
 				case "Easy":
-					clearGauge[0] += (87.5 / songNotes)
+					clearGauge[0] += (83.333 / songNotes)
 				break;
 				case "Normal":
-					clearGauge[0] += (75 / songNotes)
+					clearGauge[0] += (66.666 / songNotes)
 				break;
 				case "Hard":
 					if (clearGauge[0] != 0) clearGauge[0] += 0.0375

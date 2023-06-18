@@ -41,6 +41,7 @@ let selected = {
 	settings: {
 		volume: 10,
 		offset: 0,
+		customBuffer: false,
 	}
 }
 let uracounter = 0
@@ -103,6 +104,12 @@ let bgElements = []
 var fps = 60
 var fpsarr = []
 
+
+let initsomething = async () => {
+		await new Promise(r => setTimeout(r, Math.max(parseFloat(mdValue("OFFSET", songdata[selected.song]))*1000 + 4600, 4600)))
+		songaudios[selected.song].setPosition(600);
+}
+
 let fadetomode = async (m) => {
 	canSelect = false
 	for (let j = 0; j < 255; j+=6) {
@@ -139,12 +146,13 @@ let fadetomode = async (m) => {
 		songaudios[selected.song].setPosition(0)
 		betterTimeout(() => {
 		if (parseFloat(mdValue("OFFSET", songdata[selected.song]))*1000 > 0) {
-			betterTimeout(() => {songaudios[selected.song].play()}, parseFloat(mdValue("OFFSET", songdata[selected.song]))*1000)
+			betterTimeout(() => {songaudios[selected.song].play();}, parseFloat(mdValue("OFFSET", songdata[selected.song]))*1000)
 		} else {
 			songaudios[selected.song].setPosition(parseFloat(mdValue("OFFSET", songdata[selected.song]))*1000)
 			songaudios[selected.song].play();
 		}
-		}, 4000)
+		}, 4000);
+		if(selected.settings.customBuffer) initsomething();
 	}
 	
 	for (let j = 255; j > 0; j-=4) {
@@ -179,7 +187,7 @@ cv.text("(controls are DFJK.)", `#FFFFFFA0`, 768, 600, "pixel", "40", "center");
 
 cv.text(tips[tipnum], ["#FF8080", "#80FFFF"], 768, 715, "pixel2", "35", "center")
 
-cv.text("α.0.0:4\nhttps://discord.gg/2D2XbD77HD", "#DDDDDD50", 0, 30, "monospace", "25", "left");
+cv.text("α.0.0:5\nhttps://discord.gg/2D2XbD77HD", "#DDDDDD50", 0, 30, "monospace", "25", "left");
 break;
 
 //song select
@@ -394,7 +402,7 @@ if (noteQueue[0] != undefined) {
 	}
 }
 
-if (hitting != 0) {
+if (hitting != 0 && mode == 2) {
 	console.log(rolltime)
 	if (rolltime) {
 		hits[3]++;
@@ -513,7 +521,7 @@ function loadChart(ret=false) {
 		fullData: songdata[selected.song],
 		course: (selected.difficulty != 3 ? selected.difficulty : (difficulties.names[3] == "Extreme" ? 3 : 4)),
 		bpm: parseFloat(mdValue("BPM", songdata[selected.song])),
-		offset: parseFloat(mdValue("OFFSET", songdata[selected.song]))-(4+0.1+selected.settings.offset/1000),
+		offset: parseFloat(mdValue("OFFSET", songdata[selected.song]))-(4+(selected.settings.customBuffer * 0.1)+selected.settings.offset/1000),
 		courseData: "pending",
 		scroll: "pending",
 		measure: "pending"
@@ -740,14 +748,40 @@ Mousetrap.bind("0", function() {
 	soundManager.setVolume(3);
 })
 
+Mousetrap.bind("shift+numlock", function() {
+	alert("upload your audio as first file then chart as second");
+	
+	let fu = document.createElement('input');
+	let file = {audio: 0, data: 0}
+	fu.setAttribute("type", "file");
+	fu.setAttribute("multiple", "");
+	//fu.setAttribute("accept", "audio/*");
+    fu.onchange = () => {
+         file.audio = fu.files[0];
+		 let reader = new FileReader();
+		 reader.onload = function(e) {
+			let srcUrl = e.target.result;
+			songaudios.push(soundManager.createSound({url: srcUrl}));
+			songaudios[songaudios.length - 1].setVolume(selected.settings.volume);
+		 };
+		 reader.readAsDataURL(file.audio);
+		 
+         file.data = fu.files[1];
+		 let reader2 = new FileReader();
+		 reader2.onload = function(e) {
+			songdata.push(e.target.result);
+			songdata[songdata.length-1] = songdata[songdata.length-1].replaceAll("\r", "")
+			songINIT();
+		 };
+		 reader2.readAsText(file.data);
+		 
+		 selected.settings.customBuffer = true;
+	};
+	fu.click();
+})
+
 setInterval(updatePrec, 1)
 setInterval(() => {tipnum = Math.floor(Math.random() * tips.length)}, 12500)
-
-setTimeout(() => {
-	for (i in songdata) {
-		songdata[i] = songdata[i].replaceAll("Dan", "6").replaceAll("Edit", "4").replaceAll("Oni", "3").replaceAll("Hard", "2").replaceAll("Normal", "1").replaceAll("Easy", "0")
-	}
-}, 100)
 
 let activation = setInterval(() => {
 if (navigator.userActivation != undefined) {
@@ -767,6 +801,7 @@ if (navigator.userActivation.isActive) {
 }
 }, 1)
 
+function songINIT() {
 for (let i = 0; i < songdata.length; i++) {
 	songdata[i] = `\n${songdata[i]}`
 	songbpms.push([])
@@ -777,4 +812,8 @@ for (let i = 0; i < songdata.length; i++) {
 		songbpms[i] = singleArray([[songbpms[i][0]], songbpms[i][1]])
 		songbpms[i] = songbpms[i].sort(function(a, b) {return parseFloat(a) - parseFloat(b)})
 	}
+	songdata[i] = songdata[i].replaceAll("Dan", "6").replaceAll("Edit", "4").replaceAll("Oni", "3").replaceAll("Hard", "2").replaceAll("Normal", "1").replaceAll("Easy", "0")
 }
+}
+
+songINIT();

@@ -128,3 +128,9 @@ let sec = Math.floor(ms / 1000) % 60
 let mss = Math.round((ms % 1000)) / 1000
 return `${min.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}.${mss.toString().slice(2, mss.length).padStart(3, "0")}`
 }
+
+function convertToUTF8(str) {
+  const utf8Encoder = new TextEncoder();
+  const utf8Array = utf8Encoder.encode(str);
+  return Array.from(utf8Array, byte => String.fromCharCode(byte)).join('');
+}

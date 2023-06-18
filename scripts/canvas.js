@@ -71,7 +71,9 @@ ctx.setTransform(1/scale[0], 0, 0, 1/scale[1], 0, 0)
 clear: () => {
 var canvas = document.getElementById(cid);
 var ctx = canvas.getContext("2d");
-ctx.clearRect(0, 0, canvas.width, canvas.height);
+ctx.setTransform(scale[0], 0, 0, scale[1], 0, 0)
+ctx.clearRect(0, 0, 1536, 764);
+ctx.setTransform(1/scale[0], 0, 0, 1/scale[1], 0, 0)
 },
 
 text: (text="sample :P", color="#FFDDFF", x=0, y=0, font="monospace", size="20", align="center", stroke=false, shadow=[0, color]) => {

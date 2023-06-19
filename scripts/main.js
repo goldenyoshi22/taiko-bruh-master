@@ -414,8 +414,8 @@ if (hitting != 0 && mode == 2) {
 		return;
 	}
 	let typecor = [[1, 3], [2, 4], [1, 3], [2, 4], [1], [1], [1], [1]]
-	let precMS = Math.abs(noteQueue[0].time - noteQueue[0].position())
 	if (noteQueue[0] != undefined) {
+	let precMS = Math.abs(noteQueue[0].time - noteQueue[0].position())
 	if (typecor[noteQueue[0].type - 1].includes(hitting) && precMS <= difficulties.hitwindow[selected.difficulty][2]) {
 		if(precMS <= difficulties.hitwindow[selected.difficulty][0]) {
 			currentJudgement = ["良", "#FFA000"];

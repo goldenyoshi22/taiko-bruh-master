@@ -106,7 +106,7 @@ var fpsarr = []
 
 
 let initsomething = async () => {
-		await new Promise(r => setTimeout(r, Math.max(parseFloat(mdValue("OFFSET", songdata[selected.song]))*1000 + 4600, 4600)))
+		await new Promise(r => setTimeout(r, Math.max(parseFloat(mdValue("OFFSET", songdata[selected.song]))*1000 + 4600)))
 		songaudios[selected.song].setPosition(600);
 }
 
@@ -187,7 +187,7 @@ cv.text("(controls are DFJK.)", `#FFFFFFA0`, 768, 600, "pixel", "40", "center");
 
 cv.text(tips[tipnum], ["#FF8080", "#80FFFF"], 768, 715, "pixel2", "35", "center")
 
-cv.text("α.0.0:5\nhttps://discord.gg/2D2XbD77HD", "#DDDDDD50", 0, 30, "monospace", "25", "left");
+cv.text("α.0.0:6\nhttps://discord.gg/2D2XbD77HD", "#DDDDDD50", 0, 30, "monospace", "25", "left");
 break;
 
 //song select
@@ -521,7 +521,7 @@ function loadChart(ret=false) {
 		fullData: songdata[selected.song],
 		course: (selected.difficulty != 3 ? selected.difficulty : (difficulties.names[3] == "Extreme" ? 3 : 4)),
 		bpm: parseFloat(mdValue("BPM", songdata[selected.song])),
-		offset: parseFloat(mdValue("OFFSET", songdata[selected.song]))-(4+(selected.settings.customBuffer * 0.1)+selected.settings.offset/1000),
+		offset: parseFloat(mdValue("OFFSET", songdata[selected.song]))-(4+(!selected.settings.customBuffer * 0.1)+selected.settings.offset/1000),
 		courseData: "pending",
 		scroll: "pending",
 		measure: "pending"
@@ -757,7 +757,7 @@ Mousetrap.bind("shift+numlock", function() {
 	fu.setAttribute("multiple", "");
 	//fu.setAttribute("accept", "audio/*");
     fu.onchange = () => {
-         file.audio = fu.files[0];
+         file.audio = fu.files[0].type.startsWith("audio/") ? fu.files[0] : fu.files[1];
 		 let reader = new FileReader();
 		 reader.onload = function(e) {
 			let srcUrl = e.target.result;
@@ -766,14 +766,18 @@ Mousetrap.bind("shift+numlock", function() {
 		 };
 		 reader.readAsDataURL(file.audio);
 		 
-         file.data = fu.files[1];
+         file.data = fu.files[0].type.startsWith("audio/") ? fu.files[1] : fu.files[0];
+		 
+		 console.log(file.audio.type, file.data.type);
 		 let reader2 = new FileReader();
 		 reader2.onload = function(e) {
+			console.log(e.target.result);
 			songdata.push(e.target.result);
 			songdata[songdata.length-1] = songdata[songdata.length-1].replaceAll("\r", "")
 			songINIT();
+			console.log(file.audio.type, file.data.type);
 		 };
-		 reader2.readAsText(file.data);
+		 reader2.readAsText(file.data, 'utf-8');
 		 
 		 selected.settings.customBuffer = true;
 	};
@@ -802,8 +806,9 @@ if (navigator.userActivation.isActive) {
 }, 1)
 
 function songINIT() {
+	songbpms = []
 for (let i = 0; i < songdata.length; i++) {
-	songdata[i] = `\n${songdata[i]}`
+	if(!songdata[i].startsWith("\n"))songdata[i] = `\n${songdata[i]}`
 	songbpms.push([])
 	songbpms[i].push(mdValue("BPM", songdata[i]));
 	songbpms[i].push(mdValue("#BPMCHANGE", songdata[i], 1, true))

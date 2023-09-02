@@ -4305,8 +4305,8 @@ Easy: ☆4-
 */
 songdata.push(`TITLE:スクラッチマニア！このゆびとまれ！
 TITLEEN:Scratch Mania! Stop This Finger!
-SUBTITLE:--常夏ハニーパイ / 144.978bpm
-SUBTITLEEN:--常夏ハニーパイ / 144.978bpm
+SUBTITLE:--常夏ハニーパイ
+SUBTITLEEN:--常夏ハニーパイ
 BPM:144.978
 WAVE:songs/Scratch Mania! Stop This Finger!/scratchmania.ogg
 DEMOSTART:71.2972

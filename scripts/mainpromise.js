@@ -116,6 +116,8 @@ let currentSongData = {
 	nps: 0,
 }
 
+let ingameBPM = 120
+
 let balloon = {at: 0, hits: 0, next: 1, hitQueue: []}
 let eventQueue = []
 let currentJudgement = ["", ""]
@@ -247,7 +249,7 @@ cv.text(`(controls are ${(controls[0] + controls[1] + controls[2] + controls[3])
 
 cv.text(tips[tipnum], ["#FF8080", "#80FFFF"], 768, 715, "pixel2", "35", "center")
 
-cv.text("α.1.0\nhttps://discord.gg/2D2XbD77HD", "#DDDDDD50", 0, 30, "monospace", "25", "left");
+cv.text("α.1.0:1\nhttps://discord.gg/2D2XbD77HD", "#DDDDDD50", 0, 30, "monospace", "25", "left");
 break;
 
 //song select
@@ -342,9 +344,11 @@ case 2:
 		if (!renderQueue[i].hit) {
 		cv.circ(colorn[renderQueue[i].type], 290 + ((renderQueue[i].time - renderQueue[i].position()) * renderQueue[i].bpm*renderQueue[i].scroll*3.7), 253, 30 + (20*isbig(renderQueue[i].type)))
 		cv.circ("#FFFFFFDD", 290 + ((renderQueue[i].time - renderQueue[i].position()) * renderQueue[i].bpm*renderQueue[i].scroll*3.7), 253, 30 + (20*isbig(renderQueue[i].type)), 4 + (2*isbig(renderQueue[i].type)))
-		}
 		
-		//console.log(260 + ((noteQueue[i].time - noteQueue[i].position()) * noteQueue[i].bpm*noteQueue[i].scroll*0.5))
+		//HB
+		//cv.circ(colorn[renderQueue[i].type], 290 + ((renderQueue[i].time - renderQueue[i].position()) * ingameBPM*renderQueue[i].scroll*3.7), 253, 30 + (20*isbig(renderQueue[i].type)))
+		//cv.circ("#FFFFFFDD", 290 + ((renderQueue[i].time - renderQueue[i].position()) * ingameBPM*renderQueue[i].scroll*3.7), 253, 30 + (20*isbig(renderQueue[i].type)), 4 + (2*isbig(renderQueue[i].type)))
+		}
 	}
 	
 	for (i in rollQueue) {
@@ -367,6 +371,7 @@ case 2:
 	cv.text("連打", "#FF9020", 240, 525, "pixel", "35", "left")
 	cv.text("コンボ", "#FF6000", 240, 560, "pixel", "35", "left")
 	//cv.text(`${((mshits.reduce((sum, a) => sum + a, 0))/mshits.length).toFixed(2)}ms avg`, "#FFFFFF80", 700, 525, "pixel", "20", "center")
+	//cv.text(`BPM ${ingameBPM}`, "#FFFFFF80", 700, 525, "pixel", "20", "left")
 	cv.text((hits[4] > 0 ? hits[4] : ""), (hits[1] == 0 && hits[2] == 0 ? "#FFB080A0" : (hits[2] == 0 ? "#FFFFA0A0" : "#FFFFFFA0")), 180, 253, "pixel2", "45", "right")
 	cv.text(`${hits[0]}\n${hits[1]}\n${hits[2]}\n${hits[3]}\n${hits[5]}`, "#FFFFFF", 400, 420, "pixel", "35", "right")
 	cv.text(`${Math.round(((hits[0]*100 + hits[1]*50) / (hits[0]+hits[1]+hits[2])) * 100) / 100}%`, "#FFFFFF", 240, 600, "pixel", "35", "left")
@@ -420,7 +425,7 @@ fpsarr[0].push(fps[0])
 fpsarr[0].shift();
 
 cv.text(`${Math.round(fps[1])}(${((fpsarr[1].reduce((sum, a) => sum + a, 0))/fpsarr[1].length).toFixed(1)})tpfs\n${Math.round(fps[0])} (${((fpsarr[0].reduce((sum, a) => sum + a, 0))/fpsarr[0].length).toFixed(1)})fps`, "#FFFFFF60", 0, 764-45, "monospace", "20", "left")
-//cv.text(`${songtime.toFixed(3)} (${(4+songtime).toFixed(2)})\n${noteQueue[0] != undefined ? noteQueue[0].position().toFixed(2) + "\n" + ((noteQueue[0].position() - songtime + (pfoffset/1000))*1000).toFixed(2) + "ms" : ""}`, "#FFFFFF60", 1536, 764-45, "monospace", "20", "right")
+cv.text(`${songtime.toFixed(3)} (${(4+songtime).toFixed(2)})\n${noteQueue[0] != undefined ? noteQueue[0].position().toFixed(2) + "\n" + ((noteQueue[0].position() - songtime + (pfoffset/1000))*1000).toFixed(2) + "ms" : ""}`, "#FFFFFF60", 1536, 764-45, "monospace", "20", "right")
 
 	} catch (error) {
 		cv.rect("#00000090", 0, 250, 1536, 100)
@@ -604,12 +609,12 @@ fpsarr[1].shift();
 }
 
 class note{
-	constructor(type, time, bpm, scroll) {
+	constructor(type, time, bpm, scroll, offset = 0) {
 		this.type = type;
 		this.time = time;
 		this.started = timeStarted;
 		this.songoffset = parseFloat(mdValue("OFFSET", songdata[selected.song]));
-		this.position = () => {if (songaudios[selected.song].currentTime <= 0 || !selected.settings.customBuffer) return (performance.now() - timeStarted)/1000; else return (songtime + this.songoffset) + 4000};
+		this.position = () => {if ((songaudios[selected.song].currentTime <= 0 && songtime < songaudios[selected.song].duration) || !selected.settings.customBuffer) return (performance.now() - timeStarted)/1000; else return (songtime + this.songoffset + 4)};
 		this.bpm = bpm;
 		this.scroll = scroll;
 		this.hit = false;
@@ -703,6 +708,8 @@ function loadChart(ret=false) {
 					currentBPM = parseFloat(ev[1]);
 					currentBeat = currentBeat * (currentBPM/pastBPM)
 					console.log(pastBPM, currentBPM, currentBeat)
+					let tempCurrentBPM = currentBPM
+					betterTimeout(() => {ingameBPM = tempCurrentBPM}, ((60/currentBPM*(currentBeat*4))-chartData.offset) * 1000)
 				break;
 				case "#GOGOSTART":
 					betterTimeout(() => {gogo = true}, ((60/currentBPM*(currentBeat*4))-chartData.offset) * 1000)
@@ -721,11 +728,11 @@ function loadChart(ret=false) {
 				dll[k] = dll[k].split("")
 				for (let l = 0; l < dll[k].length; l++) {
 					if(dll[k][l] != "0") {
-						if(dll[k][l] < 5 || dll[k][l] > 8) noteQueue.push(new note(dll[k][l], (60/currentBPM*(currentBeat*4))-chartData.offset, currentBPM, currentScroll))
-						else rollQueue.push(new note(dll[k][l], (60/currentBPM*(currentBeat*4))-chartData.offset, currentBPM, currentScroll))
+						if(dll[k][l] < 5 || dll[k][l] > 8) noteQueue.push(new note(dll[k][l], (60/currentBPM*(currentBeat*4))-chartData.offset, currentBPM, currentScroll, chartData.offset))
+						else rollQueue.push(new note(dll[k][l], (60/currentBPM*(currentBeat*4))-chartData.offset, currentBPM, currentScroll, chartData.offset))
 					}
 					if(Math.abs(currentTrueBeat - Math.round(currentTrueBeat)) < 0.000001 && barlines) {
-						barQueue.push(new note(0, (60/currentBPM*(currentBeat*4))-chartData.offset, currentBPM, currentScroll))
+						barQueue.push(new note(0, (60/currentBPM*(currentBeat*4))-chartData.offset, currentBPM, currentScroll, chartData.offset))
 					}
 					//console.log((60/currentBPM*(currentBeat*4))-chartData.offset)
 					console.log(currentBeat)
@@ -736,6 +743,7 @@ function loadChart(ret=false) {
 		}
 	}
 	songNotes = noteQueue.length;
+	ingameBPM = chartData.bpm;
 	rrq(100);
 	betterTimeout(() => {clearShow = true; betterTimeout(() => {fadetomode(1)}, 5000)}, ((60/currentBPM*(currentBeat*4))-chartData.offset)*1000)
 		//soundManager.setVolume(selected.settings.volume)

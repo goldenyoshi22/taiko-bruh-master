@@ -13,6 +13,7 @@ var tips = [
 "embrace the power of multitasking!",
 "分かりますか?",
 "not sponsored by 太鼓のオワタツジン",
+"warning: this game is stupid",
 
 //actual tips
 "keyboard and drum play are different in some ways,\nespecially as difficulty increases.",

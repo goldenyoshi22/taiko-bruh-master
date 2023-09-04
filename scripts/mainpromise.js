@@ -1,18 +1,56 @@
-var cDate = new Date();
-var timefunc = [{funct: () => {}, time: 0, executed: false}] //function, time, executed already
-var debug = false
-var debugval = [0, false]
+//Menu
+let uracounter = 0
+let mode = -1
+let canSelect = true
+/*
+-1 = ready?
+0 = title
+1 = song select
+2 = ingame
+3 = results
+*/
+let selected = {
+	song: 0,
+	difficulty: -2,
+	selection: "song",
+	settings: {
+		volume: 25,
+		offset: 0,
+		customBuffer: false,
+		GAS: false,
+		defaultGauge: "None",
+		names: [
+			"Volume (%)", "Chart Offset (ms)", "Audio-Ran Notes", "Default Gauge", "Max TPS", "Upload Custom Chart"
+		],
+		amounts: [
+			25, 0, false, "None", 240, ""
+		],
+		range: [
+			[0, 100], [-5000, 5000], ()=>{selected.settings.customBuffer = !selected.settings.customBuffer}, ()=>{selected.settings.defaultGauge = gaugeNames[(gaugeNames.indexOf(selected.settings.defaultGauge)+1) % 7]}, [0.01, 2880], ()=>{customChartUpload()}
+		],
+		descriptions: [
+			"Sets the volume of the game in percentage.\n0% is the minimum, playing no sound, and 100% is the maximum.",
+			"Sets the offset of the note chart in milliseconds.",
+			"Enables notes to be moved based off the audio time, rather than\ngame time. This may cause a bit of lag in exchange for\nguaranteed sync.",
+			"You can force a type of clear gauge.\nEasier, Easy, and Normal perform similarly to standard Taiko.\nHard, EXHard, and GAS perform similarly to BMS.\n\nIf \"None\" is selected, the gauge will be based off\nthe chosen difficulty.",
+			"Sets the maximum TPS (Internal FPS) of the game.",
+			"You can locally upload a custom chart that you want to play.\nSelect two files, one for audio and one for sound.\nOtherwise, it won't work. (Recommended <15 MB)\n\nDue to the syntax of these charts, there is a\npossibility that it won't work as intended."
+		]
+	}
+}
 
+
+//Gameplay
 var controls = ["d", "f", "j", "k"]
 
-let tipnum = Math.floor(Math.random() * tips.length)
 
+//Values of things
 let difficulties = {
 	names:  ["Easy",    "Normal",  "Hard",    "Extreme", "Extra"],
 	colors: ["#FF0000", "#00FF00", "#0080FF", "#C000FF", "#0000FF"],
 	gauges: ["Easier", "Easy", "Easy", "Normal", "Normal"],
 	stars:  [5,         7,         8,         10,        10],
-	hitwindow: [[0.042, 0.108, 0.125], [0.042, 0.108, 0.125], [0.025, 0.075, 0.108], [0.025, 0.075, 0.108], [0.025, 0.075, 0.108]]
+	hitwindow: [[0.042, 0.108, 0.125], [0.036, 0.097, 0.119], [0.030, 0.086, 0.113], [0.025, 0.075, 0.108], [0.025, 0.075, 0.108]]
 }
 
 let grades = {
@@ -29,68 +67,53 @@ function gradeof(num = 100) {
 	return {name: grades.names[a], color: grades.colors[a], values: grades.values[a]}
 }
 
+
+//Misc.
+var res = [window.innerWidth, window.innerWidth / 2.010471204188482];
+var cDate = new Date();
+var timefunc = [{funct: () => {}, time: 0, executed: false}] //function, time, executed already
+var debug = false
+var debugval = [0, false]
+let tipnum = Math.floor(Math.random() * tips.length)
+
 Mousetrap.addKeycodes({
 	144: 'numlock'
 })
 
-var res = [window.innerWidth, window.innerWidth / 2.010471204188482];
+String.prototype.lengthWithJP = function () {
+	return this.length + (this.replaceAll(/[!-~\s]/gm, "").length * 1.25)
+}
+
+let maxTPS = 240
+
+
+//Setting the canvas resolution
+ID("gameCanvas").width = res[0];
+ID("gameCanvas").height = res[1];
+cv.scale(res[0] / 1536, res[1] / 764);
+
 
 console.log(`Hey, are you testing?\nDon't cheat!\n\nねぇ、 テストしていますか?\nずるしないでください。`);
 
-//setting the canvas resolution
-ID("gameCanvas").width = res[0];
-ID("gameCanvas").height = res[1];
-
-cv.scale(res[0] / 1536, res[1] / 764);
-
-//menu stuff
-let selected = {
-	song: 0,
-	difficulty: -2,
-	selection: "song",
-	settings: {
-		volume: 25,
-		offset: 0,
-		customBuffer: false,
-		defaultGauge: "None",
-		names: [
-			"Volume (%)", "Chart Offset (ms)", "Audio-Ran Notes", "Default Gauge", "Upload Custom Chart"
-		],
-		amounts: [
-			25, 0, false, "None", ""
-		],
-		range: [
-			[0, 100], [-5000, 5000], ()=>{selected.settings.customBuffer = !selected.settings.customBuffer}, ()=>{selected.settings.defaultGauge = gaugeNames[(gaugeNames.indexOf(selected.settings.defaultGauge)+1) % 6]}, ()=>{customChartUpload()}
-		],
-		descriptions: [
-			"[General]\nSets the volume of the game in percentage.\n0% is the minimum, playing no sound, and 100% is the maximum.",
-			"[Gameplay]\nSets the offset of the note chart in milliseconds.",
-			"[Gameplay]\nEnables notes to be moved based off the audio time, rather than\ngame time. This may cause a bit of lag in exchange for\nguaranteed sync.",
-			"[Gameplay]\nYou can force a type of clear gauge.\nEasier, Easy, and Normal perform similarly to standard Taiko.\nHard and EXHard perform similarly to BMS.\n\n\"None\" is based off the chosen difficulty.",
-			"[General]\nYou can locally upload a custom chart that you want to play.\nSelect two files, one for audio and one for sound.\nOtherwise, it won't work. (Recommended <15 MB)\n\nDue to the syntax of these charts, there is a\npossibility that it won't work as intended."
-		]
-	}
-}
-let uracounter = 0
-let mode = -1
-let canSelect = true
-/*
--1 = ready?
-0 = title
-1 = song select
-2 = ingame
-3 = results
-*/
 
 //song stuff
 
 let pfoffset = 0;
 let songtime = 0
 let songNotes = 0
-let clearGauge = [0, "Normal"]
-let gaugeNames = ["None", "Easier", "Easy", "Normal", "Hard", "EXHard"]
+//let clearGauge = [0, "Normal"]
+let clearGauge = {
+	easier: 0,
+	easy: 0,
+	normal: 0,
+	hard: 100,
+	exhard: 100,
+	mode: "Normal",
+	current: function () {return eval(`clearGauge.${clearGauge.mode.toLowerCase()}`)}
+}
+let gaugeNames = ["None", "Easier", "Easy", "Normal", "Hard", "EXHard", "GAS"]
 let clearShow = false
-let clearThresh = () => {return (clearGauge[1] == "Normal" ? 80 : (clearGauge[1] == "Easy" ? 72 : (clearGauge[1] == "Easier" ? 64 : 100)))}
+let clearThresh = () => {return (clearGauge.mode == "Normal" ? 80 : (clearGauge.mode == "Easy" ? 72 : (clearGauge.mode == "Easier" ? 64 : 100)))}
 let noteQueue = []
 let rollQueue = []
 let barQueue  = []
@@ -129,15 +152,11 @@ let sfxaudios = ["menu1", "menu2", "fail"]
 let songbpms = []
 let mshits = []
 
-//soundManager.defaultOptions.autoLoad = true;
-
 function sload() {
   for (let i = 0; i < songdata.length; i++) {
-	  //songaudios.push(soundManager.createSound({url: mdValue("WAVE", songdata[i]), stream: true, autoLoad: true}));
 	  songaudios.push(new Audio(mdValue("WAVE", songdata[i])));
   }
   for (let i = 0; i < sfxaudios.length; i++) {
-	  //sfxaudios[i] = soundManager.createSound({url: `sfx/${sfxaudios[i]}.wav`});
 	  sfxaudios[i] = new Audio(`sfx/${sfxaudios[i]}.wav`);
   }
 }
@@ -153,20 +172,16 @@ for (let i = 0; i < 200; i++) {fpsarr[0].push(60); fpsarr[1].push(60);}
 
 
 let initsomething = async () => {
-		//await new Promise(r => betterTimeout(r, Math.min(parseFloat(mdValue("OFFSET", songdata[selected.song]))*1000 + 5500, 5500)))
-		//songaudios[selected.song].setPosition(1500);
-		
 		await new Promise(r => betterTimeout(r, 5500))
-		//songaudios[selected.song].setPosition(7000 - Math.min(parseFloat(mdValue("OFFSET", songdata[selected.song]))*1000 + 5500, 5500))
 		songaudios[selected.song].currentTime = (7000 - Math.min(parseFloat(mdValue("OFFSET", songdata[selected.song]))*1000 + 5500, 5500))/1000
 }
 
 let fadetomode = async (m) => {
 	canSelect = false
-	for (let j = 0; j < 255; j+=6) {
+	let j = 0;
+	for (j = 0; j < 255; j+=6) {
 		await new Promise(r => betterTimeout(r, 8));
 		ID("blackTop").style.backgroundColor = `#000000${j.toString(16)}`;
-		//soundManager.setVolume((selected.settings.volume+1) - (1.1**j))
 		for(i in songaudios) {songaudios[i].pause(); songaudios[i].volume = Math.max(((selected.settings.volume+1) - (1.1**j))/100, 0)}
 		for(i in sfxaudios) {sfxaudios[i].volume = Math.max(((selected.settings.volume+1) - (1.1**j))/100, 0)}
 	}
@@ -178,30 +193,23 @@ let fadetomode = async (m) => {
 		selected.song = Math.floor(Math.random() * songdata.length)
 		songaudios[selected.song].currentTime = 0;
 		songaudios[selected.song].play();
-		for(i in songaudios) {songaudios[i].volume = ((selected.settings.volume+1) - (1.1**j))/100}
 	}
 	
 	if (mode == 1) {
-		balloon.at = 0; balloon.next = 1; balloon.hits = 0; balloon.hitQueue = []; selected.selection = "song"; selected.difficulty = -2; clearGauge[0] = 0; combo = 0; hits = [0, 0, 0, 0, 0, 0]; currentJudgement = ["", ""]; clearShow = false; mshits = [];
+		balloon.at = 0; balloon.next = 1; balloon.hits = 0; balloon.hitQueue = []; selected.selection = "song"; selected.difficulty = -2; clearGauge.easier = 0; clearGauge.easy = 0; clearGauge.normal = 0; clearGauge.hard = 100; clearGauge.exhard = 100; combo = 0; hits = [0, 0, 0, 0, 0, 0]; currentJudgement = ["", ""]; clearShow = false; mshits = []; gogo = false;
 		
-		if (uracounter % 20 >= 10) {
-			let a = [difficulties.names[3], difficulties.colors[3]];	
-  [difficulties.names[3], difficulties.names[4]] = [difficulties.names[4], difficulties.names[3]];
-  [difficulties.colors[3], difficulties.colors[4]] = [difficulties.colors[4], difficulties.colors[3]];
-		}
+		//if (uracounter % 20 >= 10) {
+			//let a = [difficulties.names[3], difficulties.colors[3]];	
+  //[difficulties.names[3], difficulties.names[4]] = [difficulties.names[4], difficulties.names[3]];
+  //[difficulties.colors[3], difficulties.colors[4]] = [difficulties.colors[4], difficulties.colors[3]];
+		//}
 				
 		uracounter = 0;
-		
-		//soundManager.setVolume(selected.settings.volume)
-		for(i in songaudios) {songaudios[i].volume = ((selected.settings.volume+1) - (1.1**j))/100}
-		for(i in sfxaudios) {sfxaudios[i].volume = ((selected.settings.volume+1) - (1.1**j))/100}
-		//songaudios[selected.song].setPosition(parseFloat(mdValue("DEMOSTART", songdata[selected.song]))*1000)
 		songaudios[selected.song].play();
 		songaudios[selected.song].currentTime = isNaN(parseFloat(mdValue("DEMOSTART", songdata[selected.song]))) ? 0 : parseFloat(mdValue("DEMOSTART", songdata[selected.song]));
 	}
 	
 	if (mode == 2) {
-		//soundManager.stopAll();
 		for(i in songaudios) {songaudios[i].pause()}
 		for(i in sfxaudios) {sfxaudios[i].pause()}
 		timeStarted = performance.now();
@@ -215,9 +223,13 @@ let fadetomode = async (m) => {
 		currentSongData.level = `${parseInt(mdValue("LEVEL", extractCourse(selected.difficulty+a, songdata[selected.song])))}${hasplus ? "+" : (hasminus ? "-" : "")}`
 	}
 	
-	for (let j = 255; j > 0; j-=4) {
+	for (j = 255; j > 0; j-=4) {
 		await new Promise(r => betterTimeout(r, 8));
 		ID("blackTop").style.backgroundColor = `#000000${j.toString(16)}`;
+		if (mode < 2) {
+			for(i in songaudios) {songaudios[i].volume = selected.settings.volume / 100}
+			for(i in sfxaudios) {sfxaudios[i].volume = selected.settings.volume / 100}
+		}
 	}
 	
 }
@@ -231,93 +243,95 @@ cv.clear();
 try {
 
 for (let i = 0; i < bgElements.length; i++) {
-	cv.circ(bgElements[i].color + "60", bgElements[i].x, 764 * (((performance.now() - bgElements[i].time) + (i*-1)*400)/12000), 30, false, [60, bgElements[i].color])
+	cv.circ(bgElements[i].color + "60", bgElements[i].x, 764 * (((performance.now() - bgElements[i].time) + (i*-1)*(20000/bgDensity))/12000), 30, false, [60, bgElements[i].color])
 }
-	cv.rect(`#${clearGauge[0] >= clearThresh() ? "FFFF00" : "000000"}${(clearGauge[1].includes("Hard") && clearGauge[0] == 0) ? "60" : "1A"}`, 0, 0, 1536, 764)
+	cv.rect(`#${clearGauge.current() >= clearThresh() ? "FFFF00" : "000000"}${(clearGauge.mode.includes("Hard") && clearGauge.current() == 0) ? "60" : "1A"}`, 0, 0, 1536, 764)
 
 switch (mode) {
 
 case -1:
-break;	
+break;
+
 
 //title
 case 0:
-
 cv.text("taiko bruh master", ["#FF0000", "#00FFFF"], 768, 275, "pixel", "90", "center");
 cv.text(`press ${controls[1].toUpperCase()} / ${controls[2].toUpperCase()} to start!`, `#FFFFFF${numtobase(Math.floor(Math.abs(Math.sin((performance.now()-500) / 450)*100)) + 5, 16).padStart(2, "0")}`, 768, 400, "pixel", "65", "center");
 cv.text(`(controls are ${(controls[0] + controls[1] + controls[2] + controls[3]).toUpperCase()}.)`, `#FFFFFFA0`, 768, 600, "pixel", "40", "center");
 
 cv.text(tips[tipnum], ["#FF8080", "#80FFFF"], 768, 715, "pixel2", "35", "center")
 
-cv.text("α.1.0:1\nhttps://discord.gg/2D2XbD77HD", "#DDDDDD50", 0, 30, "monospace", "25", "left");
+cv.text("α.1.1\nhttps://discord.gg/2D2XbD77HD", "#DDDDDD50", 0, 30, "monospace", "25", "left");
 break;
+
+
 
 //song select
 case 1:
-
 	cv.rect("#FFCC99", 30, (100 * (-1-selected.song)) + 320, 500, 80);
 	if (selected.song != -1) cv.rect("#000000", 35, (100 * (-1-selected.song)) + 325, 490, 70);
 	cv.text("Settings", (selected.song != -1 ? "#FFCC99" : "#000000"), 280, (100 * (-1-selected.song)) + 365, "pixel", "30", "center");
 
-for (let i = 0; i < songdata.length; i++) {
-	levelF = parseFloat(mdValue("LEVEL", extractCourse(3, songdata[i])))
-	levelS = parseFloat(mdValue("LEVEL", songdata[i]))
-	cv.rect("#00C0FF", 30, (100 * (i-selected.song)) + 320, 500, 80);
-	if (selected.song != i) cv.rect("#000000", 35, (100 * (i-selected.song)) + 325, 490, 70);
-	cv.text(mdValue("TITLE", songdata[i]), (selected.song != i ? "#00C0FF" : "#000000"), 280, (100 * (i-selected.song)) + 365, "pixel", (mdValue("TITLE", songdata[i]).length > 33 ? (29 * (33 / mdValue("TITLE", songdata[i]).length)).toString() : "30"), "center");
-	cv.text(Math.floor(levelF) + `${(!isNaN(parseInt(mdValue("DIFPLUS3", songdata[i]))) || (levelF - Math.floor(levelF)) >= 0.75) ? "+" : (((levelF - Math.floor(levelF)) <= 0.25 && (levelF - Math.floor(levelF)) != 0) ? "-" : "")}`
-	, (selected.song != i ? difficulties.colors[mdValue("COURSE", songdata[i])] : "#000000"), 42, (100 * (i-selected.song)) + 388, "pixel2", "20", "left", false, [Math.max((levelS - 10)*7, 0), (selected.song != i ? "#00C0FF" : "#000000")]);
-}
+	for (let i = 0; i < songdata.length; i++) {
+		levelF = parseFloat(mdValue("LEVEL", extractCourse(3, songdata[i])))
+		levelS = parseFloat(mdValue("LEVEL", songdata[i]))
+		cv.rect("#00C0FF", 30, (100 * (i-selected.song)) + 320, 500, 80);
+		if (selected.song != i) cv.rect("#000000", 35, (100 * (i-selected.song)) + 325, 490, 70);
+		cv.text(mdValue("TITLE", songdata[i]), (selected.song != i ? "#00C0FF" : "#000000"), 280, (100 * (i-selected.song)) + 365, "pixel", (mdValue("TITLE", songdata[i]).lengthWithJP() > 33 ? (29 * (33 / mdValue("TITLE", songdata[i]).lengthWithJP())).toString() : "30"), "center");
+		cv.text(Math.floor(levelF) + `${(!isNaN(parseInt(mdValue("DIFPLUS3", songdata[i]))) || (levelF - Math.floor(levelF)) >= 0.75) ? "+" : (((levelF - Math.floor(levelF)) <= 0.25 && (levelF - Math.floor(levelF)) != 0) ? "-" : "")}`
+		, (selected.song != i ? (songdata[i].includes("COURSE:4") ? difficulties.colors[4] : difficulties.colors[mdValue("COURSE", songdata[i])]) : "#000000"), 42, (100 * (i-selected.song)) + 388, "pixel2", "20", "left", false, [Math.max((levelS - 10)*7, 0), (selected.song != i ? "#00C0FF" : "#000000")]);
+	}
 
-cv.rect("#00FFFF", 650, 20, 850, 724);
-cv.rect("#000000", 655, 25, 840, 714);
-if(selected.song != -1) {
-cv.text("Length: " + lengthOfTime(songaudios[selected.song].duration*1000), "#00C0C0", 665, 65, "pixel", "30", "left");
-cv.text(mdValue("MAKER", songdata[selected.song]) != "" ? `Charted by ${mdValue("MAKER", songdata[selected.song])}` : `It's unknown who charted this.`, "#00B0B0", 1075, 350, "pixel", "30", "center");
+	cv.rect("#00FFFF", 650, 20, 850, 724);
+	cv.rect("#000000", 655, 25, 840, 714);
+	if(selected.song != -1) {
+		cv.text("Length: " + lengthOfTime(songaudios[selected.song].duration*1000), "#00C0C0", 665, 65, "pixel", "30", "left");
+		cv.text(mdValue("MAKER", songdata[selected.song]) != "" ? `Charted by ${mdValue("MAKER", songdata[selected.song])}` : `It's unknown who charted this.`, "#00B0B0", 1075, 350, "pixel", "30", "center");
 
-if (songbpms[selected.song].length > 1) cv.text(`${songbpms[selected.song][0]}-${songbpms[selected.song][songbpms[selected.song].length-1]} (${mdValue("BPM:", songdata[selected.song])}) BPM`, "#00C0C0", 1485, 65, "pixel", "30", "right");
-else cv.text(`${mdValue("BPM:", songdata[selected.song])} BPM`, "#00C0C0", 1485, 65, "pixel", "30", "right");
+		if (songbpms[selected.song].length > 1) cv.text(`${songbpms[selected.song][0]}-${songbpms[selected.song][songbpms[selected.song].length-1]} (${mdValue("BPM:", songdata[selected.song])}) BPM`, "#00C0C0", 1485, 65, "pixel", "30", "right");
+		else cv.text(`${mdValue("BPM:", songdata[selected.song])} BPM`, "#00C0C0", 1485, 65, "pixel", "30", "right");
 
-cv.text(mdValue("TITLE", songdata[selected.song]), "#00FFFF", 1075, 150, "pixel", (mdValue("TITLE", songdata[selected.song]).length > 24 ? (69 * (24 / mdValue("TITLE", songdata[selected.song]).length)).toString() : "70"), "center");
-cv.text(mdValue("SUBTITLE", songdata[selected.song]).slice(2), "#00FFFF", 1075, 225, "pixel", "35", "center");
-}
+		cv.text(mdValue("TITLE", songdata[selected.song]), "#00FFFF", 1075, 150, "pixel", (mdValue("TITLE", songdata[selected.song]).lengthWithJP() > 24 ? (69 * (24 / mdValue("TITLE", songdata[selected.song]).lengthWithJP())).toString() : "70"), "center");
+		cv.text(mdValue("SUBTITLE", songdata[selected.song]).slice(2), "#00FFFF", 1075, 225, "pixel", "35", "center");
+	}
 
-cv.rect("#FFA000", 720, 580, 100, 100);
-if (selected.difficulty != -1) cv.rect("#000000", 725, 585, 90, 90);
-cv.text("Back", (selected.difficulty != -1 ? "#FFA000" : "#000000"), 770, 635, "pixel", "20", "center")
+	cv.rect("#FFA000", 720, 580, 100, 100);
+	if (selected.difficulty != -1) cv.rect("#000000", 725, 585, 90, 90);
+	cv.text("Back", (selected.difficulty != -1 ? "#FFA000" : "#000000"), 770, 635, "pixel", "20", "center")
 	
 
-if (selected.song != -1) {
-	for (let i = 0; i < 4; i++) {
-	if(i == 3 && hasCourse("4", songdata[selected.song]) && uracounter % 20 >= 10) i++;
-	let extractCI = extractCourse(i, songdata[selected.song])
-	let levelc = parseInt(mdValue("LEVEL", extractCI));
-	if (isNaN(levelc)) continue;
-	let hasplus = (!isNaN(parseInt(mdValue("DIFPLUS", extractCI))) || (mdValue("LEVEL", extractCI) - levelc) >= 0.75)
-	let hasminus = ((mdValue("LEVEL", extractCI) - levelc) <= 0.25 && (mdValue("LEVEL", extractCI) - levelc) != 0);
-	if(i==4)i=3;
-	cv.rect(difficulties.colors[i], 720 + 180 * i, 400, 165, 165);
-	if (selected.difficulty != i) cv.rect("#000000", 725 + 180 * i, 405, 155, 155);
-	cv.rect((selected.difficulty != i ? (levelc > difficulties.stars[i] ? [difficulties.colors[i] + "50", difficulties.colors[i] + "A0"] : difficulties.colors[i] + "50") : "#0000001A"), 720 + 180 * i, 565 - (165 * (levelc / difficulties.stars[i])), 165, (165 * (levelc / difficulties.stars[i])));
-	cv.text(difficulties.names[i], (selected.difficulty != i ? difficulties.colors[i] : "#000000"), 805 + 180*i, 450, "pixel", "40", "center", false, [Math.max((levelc - difficulties.stars[i])*7, 0), (selected.difficulty != i ? difficulties.colors[i] : "#000000")])
-	cv.text(levelc, (selected.difficulty != i ? difficulties.colors[i] : "#000000"), 805 + 180*i, 520, "pixel2", "60", "center", false, [Math.max((levelc - difficulties.stars[i])*7, 0), (selected.difficulty != i ? difficulties.colors[i] : "#000000")])
-	if (hasplus) cv.text("+", (selected.difficulty != i ? shadeColor(difficulties.colors[i], 50) : "#000000"), 835 + 180*i, 500, "pixel2", (i > 1 ? "33" : "22"), "center", false, [Math.max((levelc - difficulties.stars[i])*7, 0), (selected.difficulty != i ? difficulties.colors[i] : "#000000")])
-	else if (hasminus) cv.text("-", (selected.difficulty != i ? shadeColor(difficulties.colors[i], 50) : "#000000"), 835 + 180*i, 500, "pixel", (i > 1 ? "33" : "22"), "center", false, [Math.max((levelc - difficulties.stars[i])*7, 0), (selected.difficulty != i ? difficulties.colors[i] : "#000000")])
+	if (selected.song != -1) {
+		for (let i = 0; i < 4; i++) {
+			if(i == 3 && hasCourse("4", songdata[selected.song]) && uracounter % 20 >= 10) i++;
+			let extractCI = extractCourse(i, songdata[selected.song])
+			let levelc = parseInt(mdValue("LEVEL", extractCI));
+			if (isNaN(levelc)) continue;
+			let hasplus = (!isNaN(parseInt(mdValue("DIFPLUS", extractCI))) || (mdValue("LEVEL", extractCI) - levelc) >= 0.75)
+			let hasminus = ((mdValue("LEVEL", extractCI) - levelc) <= 0.25 && (mdValue("LEVEL", extractCI) - levelc) != 0);
+			//if(i==4)i=3;
+			cv.rect(difficulties.colors[i], 720 + 180 * Math.min(i, 3), 400, 165, 165);
+			if (selected.difficulty != Math.min(i, 3)) cv.rect("#000000", 725 + 180 * Math.min(i, 3), 405, 155, 155);
+			cv.rect((selected.difficulty != Math.min(i, 3) ? (levelc > difficulties.stars[i] ? [difficulties.colors[i] + "50", difficulties.colors[i] + "A0"] : difficulties.colors[i] + "50") : (levelc > difficulties.stars[i] ? [difficulties.colors[i], `#FFFFFF${numtobase(Math.floor(Math.abs(Math.cos((performance.now()-500) / 800)*50)) + 100, 16).padStart(2, "0")}`, difficulties.colors[i]] : "#0000001A")), 720 + 180 * Math.min(i, 3), 565 - (165 * (levelc / difficulties.stars[i])), 165, (165 * (levelc / difficulties.stars[i])));
+			cv.text(difficulties.names[i], (selected.difficulty != Math.min(i, 3) ? difficulties.colors[i] : "#000000"), 805 + 180*Math.min(i, 3), 450, "pixel", "40", "center", false, [Math.max((levelc - difficulties.stars[i])*7, 0), (selected.difficulty != i ? difficulties.colors[i] : "#000000")])
+			cv.text(levelc, (selected.difficulty != Math.min(i, 3) ? difficulties.colors[i] : "#000000"), 805 + 180*Math.min(i, 3), 520, "pixel2", "60", "center", false, [Math.max((levelc - difficulties.stars[i])*7, 0), (selected.difficulty != i ? difficulties.colors[i] : "#000000")])
+			if (hasplus) cv.text("+", (selected.difficulty != Math.min(i, 3) ? shadeColor(difficulties.colors[i], 50) : "#000000"), 835 + 180*Math.min(i, 3), 500, "pixel2", (i > 1 ? "33" : "22"), "center", false, [Math.max((levelc - difficulties.stars[i])*7, 0), (selected.difficulty != Math.min(i, 3) ? difficulties.colors[i] : "#000000")])
+			else if (hasminus) cv.text("-", (selected.difficulty != Math.min(i, 3) ? shadeColor(difficulties.colors[i], 50) : "#000000"), 835 + 180*Math.min(i, 3), 500, "pixel", (i > 1 ? "33" : "22"), "center", false, [Math.max((levelc - difficulties.stars[i])*7, 0), (selected.difficulty != Math.min(i, 3) ? difficulties.colors[i] : "#000000")])
+		}
+	} else {
+		for (let i = 0; i < selected.settings.names.length; i++) {
+			cv.rect("#FFCC99", 1200, 70 + 75 * i, 120, 50);
+			cv.text(selected.settings.names[i], "#FFCC99", 720, 103 + 75 * i, "pixel", "30", "left")
+			cv.text(selected.settings.amounts[i].toString().charAt(0).toUpperCase() + selected.settings.amounts[i].toString().slice(1), "#FFCC99", 1170, 103 + 75 * i, "pixel", "30", "right")
+			if (selected.difficulty != i) cv.rect("#000000", 1205, 75 + 75 * i, 110, 40);
+			cv.text(i == 5 ? "Upload" : "Change", selected.difficulty != i ? "#FFCC99" : "#000000", 1260, 103 + 75 * i, "pixel", "30", "center")
+		}
+		cv.text(selected.settings.descriptions[selected.difficulty] != undefined ? selected.settings.descriptions[selected.difficulty] : "", "#FFCC99", 1475, 520, "pixel", "25", "right")
 	}
-} else {
-	for (let i = 0; i < selected.settings.names.length; i++) {
-	cv.rect("#FFCC99", 1200, 70 + 75 * i, 120, 50);
-	cv.text(selected.settings.names[i], "#FFCC99", 720, 103 + 75 * i, "pixel", "30", "left")
-	cv.text(selected.settings.amounts[i].toString().charAt(0).toUpperCase() + selected.settings.amounts[i].toString().slice(1), "#FFCC99", 1170, 103 + 75 * i, "pixel", "30", "right")
-	if (selected.difficulty != i) cv.rect("#000000", 1205, 75 + 75 * i, 110, 40);
-	cv.text(i == 4 ? "Upload" : "Change", selected.difficulty != i ? "#FFCC99" : "#000000", 1260, 103 + 75 * i, "pixel", "30", "center")
-	}
-	cv.text(selected.settings.descriptions[selected.difficulty] != undefined ? selected.settings.descriptions[selected.difficulty] : "", "#FFCC99", 1475, 500, "pixel", "25", "right")
-}
 
-cv.rect("#00000080", 0, 680, 1536, 1500)
-cv.text(tips[tipnum], ["#FF8080", "#80FFFF"], 768, 715, "pixel2", "35", "center")
+	cv.rect("#00000080", 0, 680, 1536, 1500)
+	cv.text(tips[tipnum], ["#FF8080", "#80FFFF"], 768, 715, "pixel2", "35", "center")
 break;
+
 
 //game
 case 2:
@@ -327,28 +341,19 @@ case 2:
 	cv.circ("#FFFFFFA0", 290, 253, 50, 3)
 	cv.circ("#FFFFFFD0", 290, 253, 30, 5)
 	
-	cv.rect(clearGauge[1] == "EXHard" ? "#804000" : "#800000", 1536-1200, 158, clearThresh()*10, 22)
-	if(clearGauge[1] != "Hard" && clearGauge[1] != "EXHard") cv.rect("#808000", 1536-(400 + ((80 - clearThresh())*10)), 147, (100-clearThresh())*10, 33)
+	cv.rect(clearGauge.mode == "EXHard" ? "#804000" : "#800000", 1536-1200, 158, clearThresh()*10, 22)
+	if(clearGauge.mode != "Hard" && clearGauge.mode != "EXHard") cv.rect("#808000", 1536-(400 + ((80 - clearThresh())*10)), 147, (100-clearThresh())*10, 33)
 	
-	cv.rect(clearGauge[0] < 100 || clearGauge[1] == "Hard" || clearGauge[1] == "EXHard" ? (clearGauge[1] == "EXHard" ? "#FF8000" : "#FF0000") : `hsl(${Math.floor((performance.now()/11)%360)}, 100%, 50%)`, 1536-1200, 158, Math.min(Math.floor(clearGauge[0]), clearThresh())*10, 22)
-	if(clearGauge[1] != "Hard" && clearGauge[1] != "EXHard") cv.rect(clearGauge[0] < 100 ? "#FFFF00" : `hsl(${Math.floor((performance.now()/11)%360)}, 100%, 50%)`, 1536-(400 + ((80 - clearThresh())*10)), 147, (Math.floor(clearGauge[0]) > clearThresh() ? Math.min(Math.floor(clearGauge[0] - clearThresh()), (100-clearThresh())) : 0)*10, 33)
+	cv.rect(clearGauge.current() < 100 || clearGauge.mode.includes("Hard") ? (clearGauge.mode == "EXHard" ? "#FF8000" : "#FF0000") : `hsl(${Math.floor((performance.now()/11)%360)}, 100%, 50%)`, 1536-1200, 158, Math.min(Math.floor(clearGauge.current()), clearThresh())*10, 22)
+	if(!clearGauge.mode.includes("Hard")) cv.rect(clearGauge.current() < 100 ? "#FFFF00" : `hsl(${Math.floor((performance.now()/11)%360)}, 100%, 50%)`, 1536-(400 + ((80 - clearThresh())*10)), 147, (Math.floor(clearGauge.current()) > clearThresh() ? Math.min(Math.floor(clearGauge.current() - clearThresh()), (100-clearThresh())) : 0)*10, 33)
 
 	let colorn = ["", "#FF0000", "#00D0FF", "#FF1010", "#10E0FF", "#FFA000", "#FFA000", "#FF3010", "#00FF00"]
 	let isbig = (t) => {return t == 3 || t == 4 || t == 6}
 	
+	rrq(100);
+
 	for (i in barQueue) {
 		cv.rect("#FFFFFF60", 288 + ((barQueue[i].time - barQueue[i].position()) * barQueue[i].bpm*barQueue[i].scroll*3.7), 185, 4, 140)
-	}
-	
-	for (i in renderQueue) {
-		if (!renderQueue[i].hit) {
-		cv.circ(colorn[renderQueue[i].type], 290 + ((renderQueue[i].time - renderQueue[i].position()) * renderQueue[i].bpm*renderQueue[i].scroll*3.7), 253, 30 + (20*isbig(renderQueue[i].type)))
-		cv.circ("#FFFFFFDD", 290 + ((renderQueue[i].time - renderQueue[i].position()) * renderQueue[i].bpm*renderQueue[i].scroll*3.7), 253, 30 + (20*isbig(renderQueue[i].type)), 4 + (2*isbig(renderQueue[i].type)))
-		
-		//HB
-		//cv.circ(colorn[renderQueue[i].type], 290 + ((renderQueue[i].time - renderQueue[i].position()) * ingameBPM*renderQueue[i].scroll*3.7), 253, 30 + (20*isbig(renderQueue[i].type)))
-		//cv.circ("#FFFFFFDD", 290 + ((renderQueue[i].time - renderQueue[i].position()) * ingameBPM*renderQueue[i].scroll*3.7), 253, 30 + (20*isbig(renderQueue[i].type)), 4 + (2*isbig(renderQueue[i].type)))
-		}
 	}
 	
 	for (i in rollQueue) {
@@ -361,16 +366,32 @@ case 2:
 		}
 	}
 	
+
+
+	for (i in renderQueue) {
+		if (!renderQueue[i].hit) {
+		cv.circ(colorn[renderQueue[i].type], 290 + ((renderQueue[i].time - renderQueue[i].position()) * renderQueue[i].bpm*renderQueue[i].scroll*3.7), 253, 30 + (20*isbig(renderQueue[i].type)))
+		cv.circ("#FFFFFFDD", 290 + ((renderQueue[i].time - renderQueue[i].position()) * renderQueue[i].bpm*renderQueue[i].scroll*3.7), 253, 30 + (20*isbig(renderQueue[i].type)), 4 + (2*isbig(renderQueue[i].type)))
+		
+		//HB
+		//cv.circ(colorn[renderQueue[i].type], 290 + ((renderQueue[i].time - renderQueue[i].position()) * ingameBPM*renderQueue[i].scroll*3.7), 253, 30 + (20*isbig(renderQueue[i].type)))
+		//cv.circ("#FFFFFFDD", 290 + ((renderQueue[i].time - renderQueue[i].position()) * ingameBPM*renderQueue[i].scroll*3.7), 253, 30 + (20*isbig(renderQueue[i].type)), 4 + (2*isbig(renderQueue[i].type)))
+		}
+	}
+	
+	
+	
 	cv.text((balloon.at != 0 && balloon.hits != 0) ? balloon.hits : "", "#FFFFFF", 290, 150, "pixel", "45", "center")
 	cv.text(currentJudgement[0], currentJudgement[1], 290, 220, "pixel", "40", "center")
 	cv.text(currentSongData.title, "#FFFFFF", 1536, 50, "pixel", "50", "right")
-	cv.text(`${difficulties.names[selected.difficulty]} ☆${currentSongData.level}`, difficulties.colors[selected.difficulty], 1536, 100, "pixel", "35", "right")
-	cv.text("良", "#FFA000", 240, 420, "pixel", "35", "left")
-	cv.text("可", "#80FFFF", 240, 455, "pixel", "35", "left")
-	cv.text("不可", "#9000D0", 240, 490, "pixel", "35", "left")
-	cv.text("連打", "#FF9020", 240, 525, "pixel", "35", "left")
-	cv.text("コンボ", "#FF6000", 240, 560, "pixel", "35", "left")
+	cv.text(`${difficulties.names[selected.difficulty + Math.floor(uracounter%20/10)]} ☆${currentSongData.level}`, difficulties.colors[selected.difficulty + Math.floor(uracounter%20/10)], 1536, 100, "pixel", "35", "right")
+	cv.text("good", "#FFA000", 240, 420, "pixel", "35", "left")
+	cv.text("okay", "#80FFFF", 240, 455, "pixel", "35", "left")
+	cv.text("miss", "#9000D0", 240, 490, "pixel", "35", "left")
+	cv.text("rolls", "#FFD040", 240, 525, "pixel", "35", "left")
+	cv.text("combo", "#FF6000", 240, 560, "pixel", "35", "left")
 	//cv.text(`${((mshits.reduce((sum, a) => sum + a, 0))/mshits.length).toFixed(2)}ms avg`, "#FFFFFF80", 700, 525, "pixel", "20", "center")
+	//cv.text(`${JSON.stringify(clearGauge, false, "\n")}`, "#FFFFFF80", 700, 525, "pixel", "20", "left")
 	//cv.text(`BPM ${ingameBPM}`, "#FFFFFF80", 700, 525, "pixel", "20", "left")
 	cv.text((hits[4] > 0 ? hits[4] : ""), (hits[1] == 0 && hits[2] == 0 ? "#FFB080A0" : (hits[2] == 0 ? "#FFFFA0A0" : "#FFFFFFA0")), 180, 253, "pixel2", "45", "right")
 	cv.text(`${hits[0]}\n${hits[1]}\n${hits[2]}\n${hits[3]}\n${hits[5]}`, "#FFFFFF", 400, 420, "pixel", "35", "right")
@@ -381,41 +402,144 @@ case 2:
 		let ts = ["clear", "#FFFFFF"]
 		
 		if (hits[2] != 0) {
-		if (clearGauge[1] != "Hard" && clearGauge[1] != "EXHard") {
-			if (clearGauge[0] >= clearThresh()) {
-				switch (clearGauge[1]) {
+		if (clearGauge.mode != "Hard" && clearGauge.mode != "EXHard") {
+			if (clearGauge.current() >= clearThresh()) {
+				switch (clearGauge.mode) {
 					case "Easier":
-					ts = [`easier clear${clearGauge[0] == 100 ? "+" : ""}`, `#${clearGauge[0] == 100 ? "CCFFCC" : "FFFFFF"}`]
+					ts = [`easy clear${clearGauge.current() == 100 ? "+" : ""}`, `#${clearGauge.current() == 100 ? "CCFFCC" : "FFFFFF"}`]
 					break;
 					case "Easy":
-					ts = [`easy clear${clearGauge[0] == 100 ? "+" : ""}`, `#${clearGauge[0] == 100 ? "CCFFCC" : "FFFFFF"}`]
+					ts = [`easy clear${clearGauge.current() == 100 ? "+" : ""}`, `#${clearGauge.current() == 100 ? "CCFFCC" : "FFFFFF"}`]
 					break;
 					case "Normal":
-					ts = [`clear${clearGauge[0] == 100 ? "+" : ""}`, `#${clearGauge[0] == 100 ? "CCFFCC" : "FFFFFF"}`]
+					ts = [`clear${clearGauge.current() == 100 ? "+" : ""}`, `#${clearGauge.current() == 100 ? "CCFFCC" : "FFFFFF"}`]
 					break;
 				}
 			} else ts = ["fail", "#A000E0"]
 		} else {
-			if (clearGauge[0] > 0) {
-				switch (clearGauge[1]) {
+			if (clearGauge.current() > 0) {
+				switch (clearGauge.mode) {
 					case "Hard":
-					ts = [`hard clear${clearGauge[0] == 100 ? "+" : ""}`, `#${clearGauge[0] == 100 ? "FF8080" : "FF0000"}`]
+					ts = [`hard clear${clearGauge.current() == 100 ? "+" : ""}`, `#${clearGauge.current() == 100 ? "FF8080" : "FF0000"}`]
 					break;
 					case "EXHard":
-					ts = [`exhard clear${clearGauge[0] == 100 ? "+" : ""}`, `#${clearGauge[0] == 100 ? "FFB080" : "FF8000"}`]
+					ts = [`exhard clear${clearGauge.current() == 100 ? "+" : ""}`, `#${clearGauge.current() == 100 ? "FFB080" : "FF8000"}`]
 					break;
 				}
 			} else ts = ["hard fail", "#FF4000"]
 		}
 
 	} else {
-		if (hits[1] == 0) ts = ["DONDERFUL COMBO!!", ["#FF8080", "#FFC080", "#FFFF80", "#80FF80", "#80CFFF", "#8080FF", "#E080FF", "#FFFFFF", "#FFFFFF"]]
+		if (hits[0] == 0) ts = ["wow you sure did \"okay\" alright", ["#00FFFF", "#FFFFFF"]]
+		else if (hits[1] == 0) ts = ["DONDERFUL COMBO!!", ["#FF8080", "#FFC080", "#FFFF80", "#80FF80", "#80CFFF", "#8080FF", "#E080FF", "#FFFFFF", "#FFFFFF"]]
 		else ts = ["FULL COMBO!", ["#FFFF00", "#FFFFA0"]]
 	}
 	cv.text(ts[0], ts[1], 1536/1.66, 265, "pixel", "60", "center")
-	cv.text(clearGauge[1].toUpperCase(), clearGauge[1] == "EXHard" ? "#FFB080" : (clearGauge[1] == "Hard" ? "#FF8080" : "#CCFFCC"), 1536/1.66, 305, "pixel2", "30", "center")
+	cv.text(clearGauge.mode.toUpperCase(), clearGauge.mode == "EXHard" ? "#FFB080" : (clearGauge.mode == "Hard" ? "#FF8080" : "#CCFFCC"), 1536/1.66, 305, "pixel2", "30", "center")
 	}
-break;
+	break;
+	
+	
+	//result screen
+	case 3:
+	let accuracy = (hits[0]*100 + hits[1]*50) / (hits[0]+hits[1]+hits[2])
+	
+	cv.rect("#000000B0", 0, 0, 1536, 764)
+	
+	cv.text(currentSongData.title, "#FFFFFF", 768, 60, "pixel", "60", "center")
+	cv.text(`${difficulties.names[selected.difficulty + Math.floor(uracounter%20/10)]} ☆${currentSongData.level}`, difficulties.colors[selected.difficulty + Math.floor(uracounter%20/10)], 768, 120, "pixel", "40", "center")
+	
+	cv.text(`${Math.round((accuracy) * 100) / 100}%`, "#FFFFFF", 500, 215, "pixel", "60", "right")
+	cv.text("good", "#FFA000", 280, 270, "pixel", "50", "left")
+	cv.text("okay", "#80FFFF", 280, 320, "pixel", "50", "left")
+	cv.text("miss", "#9000D0", 280, 370, "pixel", "50", "left")
+	cv.text(`${hits[0]}\n${hits[1]}\n${hits[2]}`, "#FFFFFF", 500, 270, "pixel", "50", "right")
+	
+	cv.text(`${hits[3]}`, "#FFFFA0", 90, 270, "pixel", "35", "right")
+	cv.text("rolls", "#FFEE80", 115, 270, "pixel", "35", "left")
+	cv.text(`${hits[5]}`, "#FFB080", 90, 310, "pixel", "35", "right")
+	cv.text("combo", "#FF6000", 115, 310, "pixel", "35", "left")
+	
+	if(!isNaN(accuracy)) cv.text(`${gradeof(accuracy).name}`, gradeof(accuracy).color, 1150, 360, "pixel", "200", "center", false, [accuracy >= 99 ? 20 : 0, gradeof(accuracy).color])
+	
+	let dHW = [difficulties.hitwindow[selected.difficulty][0], difficulties.hitwindow[selected.difficulty][1], difficulties.hitwindow[selected.difficulty][2]]
+
+	let graphStartX = 154
+	let graphEndX = 1382
+	let graphStartY = 550
+	let graphEndY = 720
+	
+	cv.rect(clearGauge.mode == "EXHard" ? "#804000" : "#800000", graphEndX-1000, graphStartY - (graphEndY - graphStartY)*0.5 - 22, clearThresh()*10, 22)
+	if(clearGauge.mode != "Hard" && clearGauge.mode != "EXHard") cv.rect("#808000", graphEndX-(200 + ((80 - clearThresh())*10)), graphStartY - (graphEndY - graphStartY)*0.5 - 33, (100-clearThresh())*10, 33)
+	
+	cv.rect(clearGauge.current() < 100 || clearGauge.mode.includes("Hard") ? (clearGauge.mode == "EXHard" ? "#FF8000" : "#FF0000") : `hsl(${Math.floor((performance.now()/11)%360)}, 100%, 50%)`, graphEndX-1000, graphStartY - (graphEndY - graphStartY)*0.5 - 22, Math.min(Math.floor(clearGauge.current()), clearThresh())*10, 22)
+	if(!clearGauge.mode.includes("Hard")) cv.rect(clearGauge.current() < 100 ? "#FFFF00" : `hsl(${Math.floor((performance.now()/11)%360)}, 100%, 50%)`, graphEndX-(200 + ((80 - clearThresh())*10)), graphStartY - (graphEndY - graphStartY)*0.5 - 33, (Math.floor(clearGauge.current()) > clearThresh() ? Math.min(Math.floor(clearGauge.current() - clearThresh()), (100-clearThresh())) : 0)*10, 33)
+	
+
+	cv.rect("#FFFFFF", graphStartX, (graphStartY - ((graphEndY - graphStartY)*0.5)), (graphEndX - graphStartX), (graphEndY - graphStartY), 5)
+	
+	cv.text(`${dHW[2] * -1000}ms`, "#B0B0B0A0", graphStartX - 10, graphStartY + ((graphEndY - graphStartY)*-0.5) + 10, "pixel", "20", "right")
+	cv.text(`${dHW[1] * -1000}ms`, "#B0B0B0A0", graphStartX - 10, graphStartY + ((graphEndY - graphStartY)*-(dHW[1] / dHW[2])*0.5) + 7.5, "pixel", "18", "right")
+	cv.text(`${dHW[0] * -1000}ms`, "#B0B0B0A0", graphStartX - 10, graphStartY + ((graphEndY - graphStartY)*-(dHW[0] / dHW[2])*0.5) + 6, "pixel", "18", "right")
+	cv.text(`0ms`, "#B0B0B080", graphStartX - 10, graphStartY + 5, "pixel", "20", "right")
+	cv.text(`${dHW[0] * 1000}ms`, "#B0B0B0A0", graphStartX - 10, graphStartY + ((graphEndY - graphStartY)*(dHW[0] / dHW[2])*0.5) + 3, "pixel", "18", "right")
+	cv.text(`${dHW[1] * 1000}ms`, "#B0B0B0A0", graphStartX - 10, graphStartY + ((graphEndY - graphStartY)*(dHW[1] / dHW[2])*0.5) + 1.5, "pixel", "18", "right")
+	cv.text(`${dHW[2] * 1000}ms`, "#B0B0B0A0", graphStartX - 10, graphStartY + ((graphEndY - graphStartY)*0.5), "pixel", "20", "right")
+	
+	cv.rect("#59B0B080", graphStartX+2.5, graphStartY + ((graphEndY - graphStartY)*(dHW[1]*-1 / dHW[2])*0.5), (graphEndX - graphStartX)-5, (((graphEndY - graphStartY)*-(dHW[1] / dHW[2])*0.5) - ((graphEndY - graphStartY)*-(dHW[0] / dHW[2])*0.5)) * -1)
+	cv.rect("#B06D0080", graphStartX+2.5, graphStartY + ((graphEndY - graphStartY)*(dHW[0]*-1 / dHW[2])*0.5), (graphEndX - graphStartX)-5, ((graphEndY - graphStartY)*-(dHW[0] / dHW[2])*0.5) * -1)
+	cv.rect("#FFA00040", graphStartX+2.5, graphStartY - 1.5, (graphEndX - graphStartX)-10, 3)
+	cv.rect("#B06D0080", graphStartX+2.5, graphStartY + ((graphEndY - graphStartY)*(dHW[0] / dHW[2])*0.5), (graphEndX - graphStartX)-5, ((graphEndY - graphStartY)*-(dHW[0] / dHW[2])*0.5))
+	cv.rect("#59B0B080", graphStartX+2.5, graphStartY + ((graphEndY - graphStartY)*(dHW[1] / dHW[2])*0.5), (graphEndX - graphStartX)-5, ((graphEndY - graphStartY)*-(dHW[1] / dHW[2])*0.5) - ((graphEndY - graphStartY)*-(dHW[0] / dHW[2])*0.5))
+	
+	for (let i = 0; i < mshits.length; i++) {
+		let colorJ;
+		if (Math.abs(mshits[i][0]/1000) <= dHW[0]) colorJ = "#FFA000";
+		else if (Math.abs(mshits[i][0]/1000) <= dHW[1]) colorJ = "#80FFFF";
+		else colorJ = "#9000D0";
+		
+		cv.circ(colorJ, graphStartX + ((graphEndX - graphStartX) * ((mshits[i][1] - 4)/(mshits[mshits.length-1][1] - 4))) - 2.5, graphStartY + ((graphEndY - graphStartY) * (mshits[i][0]/1000 / (dHW[2]*2.05))), 3)
+	}
+	
+	let ts = ["clear", "#FFFFFF"]
+		
+	if (hits[2] != 0) {
+	if (clearGauge.mode != "Hard" && clearGauge.mode != "EXHard") {
+		if (clearGauge.current() >= clearThresh()) {
+			switch (clearGauge.mode) {
+				case "Easier":
+				ts = [`easy clear${clearGauge.current() == 100 ? "+" : ""}`, `#${clearGauge.current() == 100 ? "CCFFCC" : "FFFFFF"}`]
+				break;
+				case "Easy":
+				ts = [`easy clear${clearGauge.current() == 100 ? "+" : ""}`, `#${clearGauge.current() == 100 ? "CCFFCC" : "FFFFFF"}`]
+				break;
+				case "Normal":
+				ts = [`clear${clearGauge.current() == 100 ? "+" : ""}`, `#${clearGauge.current() == 100 ? "CCFFCC" : "FFFFFF"}`]
+				break;
+			}
+		} else ts = ["fail", "#A000E0"]
+	} else {
+		if (clearGauge.current() > 0) {
+			switch (clearGauge.mode) {
+				case "Hard":
+				ts = [`hard clear${clearGauge.current() == 100 ? "+" : ""}`, `#${clearGauge.current() == 100 ? "FF8080" : "FF0000"}`]
+				break;
+				case "EXHard":
+				ts = [`exhard clear${clearGauge.current() == 100 ? "+" : ""}`, `#${clearGauge.current() == 100 ? "FFB080" : "FF8000"}`]
+				break;
+			}
+		} else ts = ["hard fail", "#FF4000"]
+	}
+	} else {
+		if (hits[0] == 0) ts = ["wow you sure did \"okay\" alright", ["#00FFFF", "#FFFFFF"]]
+		else if (hits[1] == 0) ts = ["DONDERFUL COMBO!!", ["#FF8080", "#FFC080", "#FFFF80", "#80FF80", "#80CFFF", "#8080FF", "#E080FF", "#FFFFFF", "#FFFFFF"]]
+		else ts = ["FULL COMBO!", ["#FFFF00", "#FFFFA0"]]
+	}
+	
+	cv.text(ts[0], ts[1], 768, 265, "pixel", hits[1] == 0 && hits[2] == 0 ? "30" : "68", "center")
+	cv.text(clearGauge.mode.toUpperCase(), clearGauge.mode == "EXHard" ? "#FFB080" : (clearGauge.mode == "Hard" ? "#FF8080" : "#CCFFCC"), 768, 334, "pixel2", "40", "center")
+	
+	break;
 }
 
 fps[0] = 1000/(performance.now() - lastTime[0])
@@ -424,18 +548,18 @@ lastTime[0] = performance.now()
 fpsarr[0].push(fps[0])
 fpsarr[0].shift();
 
-cv.text(`${Math.round(fps[1])}(${((fpsarr[1].reduce((sum, a) => sum + a, 0))/fpsarr[1].length).toFixed(1)})tpfs\n${Math.round(fps[0])} (${((fpsarr[0].reduce((sum, a) => sum + a, 0))/fpsarr[0].length).toFixed(1)})fps`, "#FFFFFF60", 0, 764-45, "monospace", "20", "left")
-cv.text(`${songtime.toFixed(3)} (${(4+songtime).toFixed(2)})\n${noteQueue[0] != undefined ? noteQueue[0].position().toFixed(2) + "\n" + ((noteQueue[0].position() - songtime + (pfoffset/1000))*1000).toFixed(2) + "ms" : ""}`, "#FFFFFF60", 1536, 764-45, "monospace", "20", "right")
+cv.text(`${Math.round(fps[1])}(${((fpsarr[1].reduce((sum, a) => sum + a, 0))/fpsarr[1].length).toFixed(1)})tps\n${Math.round(fps[0])} (${((fpsarr[0].reduce((sum, a) => sum + a, 0))/fpsarr[0].length).toFixed(1)})fps`, "#FFFFFF60", 0, 764-45, "monospace", "20", "left")
+cv.text(`${songtime.toFixed(3)} (${(4+songtime).toFixed(3)})\n${noteQueue[0] != undefined ? noteQueue[0].position().toFixed(3) + "\n" + ((noteQueue[0].position() - songtime + (pfoffset/1000))*1000).toFixed(2) + "ms" : ""}`, "#FFFFFF60", 1536, 764-45, "monospace", "20", "right")
 
 	} catch (error) {
 		cv.rect("#00000090", 0, 250, 1536, 100)
 		cv.text(error.stack.toString(), "#FF8080", 1400, 300, "monospace", "15", "right")
 		console.log(error.stack)
 	}
-
-
 window.requestAnimationFrame(update)
 }
+
+
 
 //updatePrec
 function updatePrec() {
@@ -452,13 +576,13 @@ if (performance.now() >= timefunc[0].time && !timefunc[0].executed) {
 for (let i = 0; i < bgDensity; i++) {
 	if (bgElements.length <= bgDensity) bgElements.push({color: shadeColor(randomColor(), 100), time: performance.now(), x: Math.floor(Math.random() * 1536) + 30})
 		else {
-			if (764 * (((performance.now() - bgElements[i].time) + (i*-1)*400)/12000) > 764+50) bgElements[i].time = performance.now();
+			if (764 * (((performance.now() - bgElements[i].time) + (i*-1)*(20000/bgDensity))/12000) > 764+50) bgElements[i].time = performance.now();
 		}
 }
 
 let rolltime = false
+let ib = 0;
 
-	let ib = 0;
 for (i in rollQueue) {
 	i = parseInt(i)
 	if (rollQueue[i].type == 7) ib++;
@@ -475,32 +599,19 @@ for (i in rollQueue) {
 	}
 }
 
-rrq(100);
-
 if (noteQueue[0] != undefined) {
 	while ((noteQueue[0].time - noteQueue[0].position()) <= (difficulties.hitwindow[selected.difficulty][2])*-1 && !noteQueue[0].hit) {
+		mshits.push([difficulties.hitwindow[selected.difficulty][2]*1000, noteQueue[0].time]);
 		noteQueue[0].hit = true;
 		noteQueue.shift()
 		currentJudgement = ["不可", "#9000D0"];
 		hits[2]++;
 		hits[4] = 0;
-			switch (clearGauge[1]) {
-				case "Easier":
-					clearGauge[0] -= (133.333 / songNotes)
-				break;
-				case "Easy":
-					clearGauge[0] -= (133.333 / songNotes)
-				break;
-				case "Normal":
-					clearGauge[0] -= (133.333 / songNotes)
-				break;
-				case "Hard":
-					clearGauge[0] -= (10/3)
-				break;
-				case "EXHard":
-					clearGauge[0] -= 10
-				break;
-			}
+		clearGauge.easier -= (133.333 / songNotes);
+		clearGauge.easy -= (133.333 / songNotes);
+		clearGauge.normal -= (133.333 / songNotes);
+		clearGauge.hard -= (10/3);
+		clearGauge.exhard -= (10);
 	}
 }
 
@@ -518,72 +629,36 @@ if (hitting[0] != undefined && mode == 2) {
 	if (noteQueue[0] != undefined) {
 	let precMS = Math.abs(noteQueue[0].time - noteQueue[0].position())
 	if (typecor[noteQueue[0].type - 1].includes(hitting[0]) && precMS <= difficulties.hitwindow[selected.difficulty][2]) {
-		//mshits.push(precMS*1000)
+		mshits.push([(noteQueue[0].time - noteQueue[0].position()) * -1000, noteQueue[0].time])
 		if(precMS <= difficulties.hitwindow[selected.difficulty][0]) {
 			currentJudgement = ["良", "#FFA000"];
 			hits[0]++;
 			hits[4]++;
-			switch (clearGauge[1]) {
-				case "Easier":
-					clearGauge[0] += (177.777 / songNotes)
-				break;
-				case "Easy":
-					clearGauge[0] += (155.555 / songNotes)
-				break;
-				case "Normal":
-					clearGauge[0] += (133.333 / songNotes)
-				break;
-				case "Hard":
-					if (clearGauge[0] != 0) clearGauge[0] += 0.075
-				break;
-				case "EXHard":
-					if (clearGauge[0] != 0) clearGauge[0] += 0.05
-				break;
-			}
+			clearGauge.easier += (177.777 / songNotes);
+			clearGauge.easy += (155.555 / songNotes);
+			clearGauge.normal += (133.333 / songNotes);
+			if (clearGauge.hard != 0) clearGauge.hard += 0.075;
+			if (clearGauge.exhard != 0) clearGauge.exhard += 0.05;
 		}
 		else if(precMS <= difficulties.hitwindow[selected.difficulty][1]) {
 			currentJudgement = ["可", "#80FFFF"];
 			hits[1]++;
 			hits[4]++;
-			switch (clearGauge[1]) {
-				case "Easier":
-					clearGauge[0] += (88.888 / songNotes)
-				break;
-				case "Easy":
-					clearGauge[0] += (77.777 / songNotes)
-				break;
-				case "Normal":
-					clearGauge[0] += (66.666 / songNotes)
-				break;
-				case "Hard":
-					if (clearGauge[0] != 0) clearGauge[0] += 0.0375
-				break;
-				case "EXHard":
-					if (clearGauge[0] != 0) clearGauge[0] += 0.025
-				break;
-			}
+			clearGauge.easier += (88.888 / songNotes);
+			clearGauge.easy += (77.777 / songNotes);
+			clearGauge.normal += (66.666 / songNotes);
+			if (clearGauge.hard != 0) clearGauge.hard += 0.0375;
+			if (clearGauge.exhard != 0) clearGauge.exhard += 0.025;
 		}
 		else {
 			currentJudgement = ["不可","#9000D0"];
 			hits[2]++;
 			hits[4] = 0;
-			switch (clearGauge[1]) {
-				case "Easier":
-					clearGauge[0] -= (150 / songNotes)
-				break;
-				case "Easy":
-					clearGauge[0] -= (150 / songNotes)
-				break;
-				case "Normal":
-					clearGauge[0] -= (150 / songNotes)
-				break;
-				case "Hard":
-					clearGauge[0] -= (10/3)
-				break;
-				case "EXHard":
-					clearGauge[0] -= 10
-				break;
-			}
+			clearGauge.easier -= (133.333 / songNotes);
+			clearGauge.easy -= (133.333 / songNotes);
+			clearGauge.normal -= (133.333 / songNotes);
+			clearGauge.hard -= (10/3);
+			clearGauge.exhard -= 10;
 		}
 	noteQueue[0].hit = true;
 	noteQueue.shift();
@@ -592,7 +667,37 @@ if (hitting[0] != undefined && mode == 2) {
 	}
 }
 
-clearGauge[0] = Math.min(Math.max(clearGauge[0], 0), ((clearGauge[1] == "Hard" || clearGauge[1] == "EXHard") && clearGauge[0] <= 0) ? 0 : 100)
+clearGauge.easier = Math.min(Math.max(clearGauge.easier, 0), 100)
+clearGauge.easy = Math.min(Math.max(clearGauge.easy, 0), 100)
+clearGauge.normal = Math.min(Math.max(clearGauge.normal, 0), 100)
+clearGauge.hard = Math.min(Math.max(clearGauge.hard, 0), clearGauge.hard <= 0 ? 0 : 100)
+clearGauge.exhard = Math.min(Math.max(clearGauge.exhard, 0), clearGauge.exhard <= 0 ? 0 : 100)
+//clearGauge.current() = Math.min(Math.max(clearGauge.current(), 0), ((clearGauge.mode == "Hard" || clearGauge.mode == "EXHard") && clearGauge.current() <= 0) ? 0 : 100)
+
+if (selected.settings.GAS) {
+	switch (clearGauge.mode) {
+		case "EXHard":
+			if (clearGauge.exhard == 0) clearGauge.mode = "Hard";
+		break;
+		
+		case "Hard":
+			if (clearGauge.hard == 0) clearGauge.mode = "Easier";
+		break;
+
+		case "Normal":
+			if (clearGauge.normal < 80) clearGauge.mode = "Easy";
+		break;
+		
+		case "Easy":
+			if (clearGauge.easy < 72) clearGauge.mode = "Easier";
+			if (clearGauge.normal >= 80) clearGauge.mode = "Normal";
+		break;
+		
+		case "Easier":
+			if (clearGauge.easy >= 72) clearGauge.mode = "Easy";
+		break;
+	}
+}
 
 if (hits[4] > hits[5]) hits[5] = hits[4]
 
@@ -633,7 +738,7 @@ function loadChart(ret=false) {
 	barQueue = [];
 	let chartData = {
 		fullData: songdata[selected.song],
-		course: (selected.difficulty != 3 ? selected.difficulty : (difficulties.names[3] == "Extreme" || difficulties.names[3] == "おに" ? 3 : 4)),
+		course: (selected.difficulty != 3 ? selected.difficulty : (uracounter % 20 < 10 ? 3 : 4)),
 		bpm: parseFloat(mdValue("BPM:", songdata[selected.song])),
 		offset: Math.max(0, parseFloat(mdValue("OFFSET", songdata[selected.song])))-(4-selected.settings.offset/1000),
 		courseData: "pending",
@@ -641,9 +746,15 @@ function loadChart(ret=false) {
 		measure: "pending"
 	}
 	chartData.courseData = extractCourse(chartData.course, chartData.fullData, true).replaceAll("\n,\n", "\n0,\n").replaceAll(RegExp("(?:/\\*(?:[^*]|(?:\\*+[^*/]))*\\*+/)|(?://.*)", "g"),"");
-	if(selected.settings.defaultGauge == "None") clearGauge[1] = difficulties.gauges[selected.difficulty]
-	else clearGauge[1] = selected.settings.defaultGauge;
-	if (clearGauge[1].includes("Hard")) clearGauge[0] = 100;
+	if (selected.settings.defaultGauge == "GAS") {
+		selected.settings.GAS = true;
+		clearGauge.mode = "EXHard";
+	} else {
+		selected.settings.GAS = false;
+		if(selected.settings.defaultGauge == gaugeNames[0]) clearGauge.mode = difficulties.gauges[selected.difficulty]
+		else clearGauge.mode = selected.settings.defaultGauge;
+	}
+	clearGauge.hard = 100; clearGauge.exhard = 100;
 	console.log(chartData)
 	chartData.scroll = 1
 	chartData.measure = 4/4;
@@ -712,10 +823,10 @@ function loadChart(ret=false) {
 					betterTimeout(() => {ingameBPM = tempCurrentBPM}, ((60/currentBPM*(currentBeat*4))-chartData.offset) * 1000)
 				break;
 				case "#GOGOSTART":
-					betterTimeout(() => {gogo = true}, ((60/currentBPM*(currentBeat*4))-chartData.offset) * 1000)
+					betterTimeout(() => {gogo = true}, ((60/currentBPM*(currentBeat*4))-chartData.offset) * 1000 + selected.settings.offset)
 				break;
 				case "#GOGOEND":
-					betterTimeout(() => {gogo = false}, ((60/currentBPM*(currentBeat*4))-chartData.offset) * 1000)
+					betterTimeout(() => {gogo = false}, ((60/currentBPM*(currentBeat*4))-chartData.offset) * 1000 + selected.settings.offset)
 				break;
 				case "#BARLINEOFF":
 					barlines = false
@@ -745,7 +856,7 @@ function loadChart(ret=false) {
 	songNotes = noteQueue.length;
 	ingameBPM = chartData.bpm;
 	rrq(100);
-	betterTimeout(() => {clearShow = true; betterTimeout(() => {fadetomode(1)}, 5000)}, ((60/currentBPM*(currentBeat*4))-chartData.offset)*1000)
+	betterTimeout(() => {clearShow = true; betterTimeout(() => {fadetomode(3)}, 5000)}, ((60/currentBPM*(currentBeat*4))-chartData.offset)*1000)
 		//soundManager.setVolume(selected.settings.volume)
 		for(i in songaudios) {songaudios[i].volume = selected.settings.volume/100}
 		for(i in sfxaudios) {sfxaudios[i].volume = selected.settings.volume/100}
@@ -764,7 +875,7 @@ function loadChart(ret=false) {
 			songaudios[selected.song].play();
 		}
 		}, Math.min(4000, 4000+pfoffset));
-		betterTimeout(() => {if (noteQueue[0] != undefined) songaudios[selected.song].currentTime = noteQueue[0].position() - pfoffset/1000 - 4}, Math.min(4000 + pfoffset, 4000));
+		betterTimeout(() => {if (noteQueue[0] != undefined && !selected.settings.customBuffer) songaudios[selected.song].currentTime = noteQueue[0].position() - pfoffset/1000 - 4}, Math.min(4000 + pfoffset, 4000));
 }
 
 function betterTimeout(func, ms) {
@@ -855,30 +966,37 @@ Mousetrap.bind([controls[1], controls[2]], function() {
 							for(i in sfxaudios) {sfxaudios[i].volume = selected.settings.volume/100}
 						};
 						if (selected.difficulty == 1) selected.settings.offset = a;
+						if (selected.difficulty == 4) {
+							maxTPS = a;
+							clearInterval(tickInterval);
+							tickInterval = setInterval(updatePrec, 1000/maxTPS);
+						}
 						}
 					} else {
 						range();
 						if (selected.difficulty == 2) selected.settings.amounts[2] = selected.settings.customBuffer;
 						if (selected.difficulty == 3) selected.settings.amounts[3] = selected.settings.defaultGauge;
+						if (selected.difficulty == 4) selected.settings.amounts[4] = maxTPS;
 					}
 				} else fadetomode(2);
 			}
 			else {
 				selected.selection = "song"; 
 				selected.difficulty = -2;
-				if (uracounter % 20 >= 10) {
+				/*if (uracounter % 20 >= 10) {
 				let a = [difficulties.names[3], difficulties.colors[3]];
 				difficulties.names[3] = difficulties.names[4];
 				difficulties.names[4] = a[0];
 				difficulties.colors[3] = difficulties.colors[4];
 				difficulties.colors[4] = a[1];
-				}
+				}*/
 				uracounter = 0
 			}
 			break;
 		}
 		}
-		if (mode == 2) hitting.push(1)
+		if (mode == 2) hitting.push(1);
+		if (mode == 3) fadetomode(1);
 	}
 }, "keydown")
 
@@ -907,13 +1025,13 @@ Mousetrap.bind(controls[3], function() {
 			else {
 			if (selected.song > -1) {
 			if (hasCourse("4", songdata[selected.song])) uracounter++
-			if (uracounter % 20 == 10 || uracounter % 20 == 0 && hasCourse("4", songdata[selected.song])) {
+			/*if (uracounter % 20 == 10 || uracounter % 20 == 0 && hasCourse("4", songdata[selected.song])) {
 				let a = [difficulties.names[3], difficulties.colors[3]];
 				difficulties.names[3] = difficulties.names[4];
 				difficulties.names[4] = a[0];
 				difficulties.colors[3] = difficulties.colors[4];
 				difficulties.colors[4] = a[1];
-			}
+			}*/
 			}
 			}
 			break;
@@ -923,19 +1041,19 @@ Mousetrap.bind(controls[3], function() {
 	}
 }, "keydown")
 
-Mousetrap.bind("l+p", function() {convertLanguage("JP")})
+Mousetrap.bind("shift+j+p", function() {convertLanguage("JP")})
 
-
-Mousetrap.bind("q+a", function() {
+Mousetrap.bind("shift+s+d", function() {
 	if (canSelect && mode < 2) {
 		//songdata.sort((a, b)=>{return parseFloat(mdValue("LEVEL", extractCourse(3, a))) - parseFloat(mdValue("LEVEL", extractCourse(3, b)))})
 		let c = [];
 		let level = function (data) {
 			let temp = parseFloat(mdValue("LEVEL", extractCourse(3, data)))
-			if (temp == Math.floor(temp)) {temp += 0.5;}
+			if (mdValue("DIFPLUS3", extractCourse(3, data)) != "") temp += 0.75;
 			else {
-				if (mdValue("DIFPLUS", extractCourse(3, data)) != "") temp += 0.75;
+				if (temp == Math.floor(temp)) temp += 0.5;
 			}
+			console.log(temp)
 			return temp
 		}
 		for (let i = 0; i < songdata.length; i++) {c.push({'data': songdata[i], 'audio': songaudios[i]})}
@@ -997,7 +1115,7 @@ function customChartUpload() {
 	fu.click();
 }
 
-setInterval(updatePrec, 1000/1440)
+let tickInterval = setInterval(updatePrec, 1000/maxTPS)
 setInterval(() => {tipnum = Math.floor(Math.random() * tips.length)}, 12500)
 
 

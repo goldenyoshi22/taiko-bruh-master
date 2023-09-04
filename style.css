@@ -12,6 +12,13 @@
   src: url(JF-Dot-MPlusQ10.ttf) format('truetype');
 }
 
+@font-face {
+  font-family: 'pixel3';
+  font-style: normal;
+  font-weight: 400;
+  src: url(JF-Dot-milkjf16.ttf) format('truetype');
+}
+
 body {
 font-family: monospace;
 background-color: black;

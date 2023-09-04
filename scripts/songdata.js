@@ -12,7 +12,7 @@ Easy: ☆1
 songdata.push(`TITLE:(^^)
 SUBTITLE:--yamajet
 BPM:140
-WAVE:songs/0foon/(^^).ogg
+WAVE:songs/0foon/(^^)_a2.ogg
 OFFSET:-0.7
 DEMOSTART:0.7
 MAKER:goldenyoshi22
@@ -5274,7 +5274,7 @@ TITLEEN:Scratch Mania! Stop This Finger!
 SUBTITLE:--常夏ハニーパイ
 SUBTITLEEN:--常夏ハニーパイ
 BPM:145
-WAVE:songs/Scratch Mania! Stop This Finger!/scratchmania.ogg
+WAVE:songs/Scratch Mania! Stop This Finger!/scratchmania_a2.ogg
 DEMOSTART:71.8794
 OFFSET:-0.707
 MAKER:goldenyoshi22

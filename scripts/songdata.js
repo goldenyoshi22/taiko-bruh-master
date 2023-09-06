@@ -886,9 +886,9 @@ Easy: ☆2
 songdata.push(`TITLE:Absurd Gaff
 SUBTITLE:--siromaru
 BPM:160
-WAVE:songs/Absurd Gaff/absurd gaff.ogg
-DEMOSTART:60.158
-OFFSET:-0.1555
+WAVE:songs/Absurd Gaff/absurd gaff_a2.ogg
+DEMOSTART:60.709
+OFFSET:-0.709
 MAKER:goldenyoshi22
 
 COURSE:4

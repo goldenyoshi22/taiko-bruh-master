@@ -138,3 +138,18 @@ function convertToUTF8(str) {
   const utf8Array = utf8Encoder.encode(str);
   return Array.from(utf8Array, byte => String.fromCharCode(byte)).join('');
 }
+
+function msCheck(func) {
+	console.time("prof")
+	func();
+	console.timeEnd("prof")
+}
+
+function performanceTester(seconds) {
+	let pt = performance.now();
+	let perf = 0;
+	while (performance.now() < (pt+seconds*1000)) {
+		perf++;
+	}
+	return perf
+}

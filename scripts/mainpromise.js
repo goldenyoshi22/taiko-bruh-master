@@ -19,20 +19,23 @@ let selected = {
 		customBuffer: false,
 		GAS: false,
 		defaultGauge: "None",
+		vsync: true,
 		names: [
-			"Volume (%)", "Chart Offset (ms)", "Audio-Ran Notes", "Default Gauge", "Max TPS", "Upload Custom Chart"
+			"Volume (%)", "Chart Offset (ms)", "Audio-Ran Notes", "Default Gauge", "VSync", "Max FPS", "Max TPS", "Upload Custom Chart"
 		],
 		amounts: [
-			25, 0, false, "None", 240, ""
+			25, 0, false, "None", true, 60, 240, ""
 		],
 		range: [
-			[0, 100], [-5000, 5000], ()=>{selected.settings.customBuffer = !selected.settings.customBuffer}, ()=>{selected.settings.defaultGauge = gaugeNames[(gaugeNames.indexOf(selected.settings.defaultGauge)+1) % 7]}, [0.01, 2880], ()=>{customChartUpload()}
+			[0, 100], [-1500, 1500], ()=>{selected.settings.customBuffer = !selected.settings.customBuffer}, ()=>{selected.settings.defaultGauge = gaugeNames[(gaugeNames.indexOf(selected.settings.defaultGauge)+1) % 7]}, ()=>{selected.settings.vsync = !selected.settings.vsync}, [1, 360], [1, 2880], ()=>{customChartUpload()}
 		],
 		descriptions: [
 			"Sets the volume of the game in percentage.\n0% is the minimum, playing no sound, and 100% is the maximum.",
 			"Sets the offset of the note chart in milliseconds.",
 			"Enables notes to be moved based off the audio time, rather than\ngame time. This may cause a bit of lag in exchange for\nguaranteed sync.",
 			"You can force a type of clear gauge.\nEasier, Easy, and Normal perform similarly to standard Taiko.\nHard, EXHard, and GAS perform similarly to BMS.\n\nIf \"None\" is selected, the gauge will be based off\nthe chosen difficulty.",
+			"Defaults the FPS to your monitor's refresh rate.",
+			"Sets the maximum FPS (Rendering) of the game, IF Vsync is off.",
 			"Sets the maximum TPS (Internal FPS) of the game.",
 			"You can locally upload a custom chart that you want to play.\nSelect two files, one for audio and one for sound.\nOtherwise, it won't work. (Recommended <15 MB)\n\nDue to the syntax of these charts, there is a\npossibility that it won't work as intended."
 		]
@@ -84,6 +87,7 @@ String.prototype.lengthWithJP = function () {
 	return this.length + (this.replaceAll(/[!-~\s]/gm, "").length * 1.25)
 }
 
+let maxFPS = 60
 let maxTPS = 240
 
 
@@ -261,13 +265,15 @@ cv.text(`(controls are ${(controls[0] + controls[1] + controls[2] + controls[3])
 
 cv.text(tips[tipnum], ["#FF8080", "#80FFFF"], 768, 715, "pixel2", "35", "center")
 
-cv.text("α.1.1\nhttps://discord.gg/2D2XbD77HD", "#DDDDDD50", 0, 30, "monospace", "25", "left");
+cv.text("α.1.1:1\nhttps://discord.gg/2D2XbD77HD", "#DDDDDD50", 0, 30, "monospace", "25", "left");
 break;
 
 
 
 //song select
 case 1:
+	let dataOfSelected = selected.song != -1 ? songdata[selected.song] : ""
+	
 	cv.rect("#FFCC99", 30, (100 * (-1-selected.song)) + 320, 500, 80);
 	if (selected.song != -1) cv.rect("#000000", 35, (100 * (-1-selected.song)) + 325, 490, 70);
 	cv.text("Settings", (selected.song != -1 ? "#FFCC99" : "#000000"), 280, (100 * (-1-selected.song)) + 365, "pixel", "30", "center");
@@ -286,13 +292,13 @@ case 1:
 	cv.rect("#000000", 655, 25, 840, 714);
 	if(selected.song != -1) {
 		cv.text("Length: " + lengthOfTime(songaudios[selected.song].duration*1000), "#00C0C0", 665, 65, "pixel", "30", "left");
-		cv.text(mdValue("MAKER", songdata[selected.song]) != "" ? `Charted by ${mdValue("MAKER", songdata[selected.song])}` : `It's unknown who charted this.`, "#00B0B0", 1075, 350, "pixel", "30", "center");
+		cv.text(mdValue("MAKER", dataOfSelected) != "" ? `Charted by ${mdValue("MAKER", dataOfSelected)}` : `It's unknown who charted this.`, "#00B0B0", 1075, 350, "pixel", "30", "center");
 
-		if (songbpms[selected.song].length > 1) cv.text(`${songbpms[selected.song][0]}-${songbpms[selected.song][songbpms[selected.song].length-1]} (${mdValue("BPM:", songdata[selected.song])}) BPM`, "#00C0C0", 1485, 65, "pixel", "30", "right");
-		else cv.text(`${mdValue("BPM:", songdata[selected.song])} BPM`, "#00C0C0", 1485, 65, "pixel", "30", "right");
+		if (songbpms[selected.song].length > 1) cv.text(`${songbpms[selected.song][0]}-${songbpms[selected.song][songbpms[selected.song].length-1]} (${mdValue("BPM:", dataOfSelected)}) BPM`, "#00C0C0", 1485, 65, "pixel", "30", "right");
+		else cv.text(`${mdValue("BPM:", dataOfSelected)} BPM`, "#00C0C0", 1485, 65, "pixel", "30", "right");
 
-		cv.text(mdValue("TITLE", songdata[selected.song]), "#00FFFF", 1075, 150, "pixel", (mdValue("TITLE", songdata[selected.song]).lengthWithJP() > 24 ? (69 * (24 / mdValue("TITLE", songdata[selected.song]).lengthWithJP())).toString() : "70"), "center");
-		cv.text(mdValue("SUBTITLE", songdata[selected.song]).slice(2), "#00FFFF", 1075, 225, "pixel", "35", "center");
+		cv.text(mdValue("TITLE", dataOfSelected), "#00FFFF", 1075, 150, "pixel", (mdValue("TITLE", dataOfSelected).lengthWithJP() > 24 ? (69 * (24 / mdValue("TITLE", dataOfSelected).lengthWithJP())).toString() : "70"), "center");
+		cv.text(mdValue("SUBTITLE", dataOfSelected).slice(2), "#00FFFF", 1075, 225, "pixel", "35", "center");
 	}
 
 	cv.rect("#FFA000", 720, 580, 100, 100);
@@ -302,12 +308,13 @@ case 1:
 
 	if (selected.song != -1) {
 		for (let i = 0; i < 4; i++) {
-			if(i == 3 && hasCourse("4", songdata[selected.song]) && uracounter % 20 >= 10) i++;
-			let extractCI = extractCourse(i, songdata[selected.song])
+			if(i == 3 && hasCourse("4", dataOfSelected) && uracounter % 20 >= 10) i++;
+			let extractCI = extractCourse(i, dataOfSelected)
 			let levelc = parseInt(mdValue("LEVEL", extractCI));
+			let levelf = parseFloat(mdValue("LEVEL", extractCI));
 			if (isNaN(levelc)) continue;
-			let hasplus = (!isNaN(parseInt(mdValue("DIFPLUS", extractCI))) || (mdValue("LEVEL", extractCI) - levelc) >= 0.75)
-			let hasminus = ((mdValue("LEVEL", extractCI) - levelc) <= 0.25 && (mdValue("LEVEL", extractCI) - levelc) != 0);
+			let hasplus = (!isNaN(parseInt(mdValue("DIFPLUS", extractCI))) || (levelf - levelc) >= 0.75)
+			let hasminus = (levelf - levelc <= 0.25 && levelf - levelc != 0);
 			//if(i==4)i=3;
 			cv.rect(difficulties.colors[i], 720 + 180 * Math.min(i, 3), 400, 165, 165);
 			if (selected.difficulty != Math.min(i, 3)) cv.rect("#000000", 725 + 180 * Math.min(i, 3), 405, 155, 155);
@@ -319,12 +326,19 @@ case 1:
 		}
 	} else {
 		for (let i = 0; i < selected.settings.names.length; i++) {
-			cv.rect("#FFCC99", 1200, 70 + 75 * i, 120, 50);
-			cv.text(selected.settings.names[i], "#FFCC99", 720, 103 + 75 * i, "pixel", "30", "left")
-			cv.text(selected.settings.amounts[i].toString().charAt(0).toUpperCase() + selected.settings.amounts[i].toString().slice(1), "#FFCC99", 1170, 103 + 75 * i, "pixel", "30", "right")
-			if (selected.difficulty != i) cv.rect("#000000", 1205, 75 + 75 * i, 110, 40);
-			cv.text(i == 5 ? "Upload" : "Change", selected.difficulty != i ? "#FFCC99" : "#000000", 1260, 103 + 75 * i, "pixel", "30", "center")
+			let affectedI = i - Math.max(selected.difficulty, 0)
+			if (affectedI >= -1 && affectedI < 6) {
+			cv.rect("#FFCC99", 1200, 70 + 75 * affectedI, 120, 50);
+			cv.text(selected.settings.names[i], "#FFCC99", 720, 103 + 75 * affectedI, "pixel", "30", "left")
+			cv.text(selected.settings.amounts[i].toString().charAt(0).toUpperCase() + selected.settings.amounts[i].toString().slice(1), "#FFCC99", 1170, 103 + 75 * affectedI, "pixel", "30", "right")
+			if (selected.difficulty != i) cv.rect("#000000", 1205, 75 + 75 * affectedI, 110, 40);
+			cv.text(i == 7 ? "Upload" : "Change", selected.difficulty != i ? "#FFCC99" : "#000000", 1260, 103 + 75 * affectedI, "pixel", "30", "center")
+			}
 		}
+		cv.rect("#00000080", 655, 0, 840, 50);
+		cv.rect("#000000", 655, 0, 840, 25);
+		cv.rect("#000000", 655, 470, 840, 25);
+		cv.rect("#00000080", 655, 445, 840, 50);
 		cv.text(selected.settings.descriptions[selected.difficulty] != undefined ? selected.settings.descriptions[selected.difficulty] : "", "#FFCC99", 1475, 520, "pixel", "25", "right")
 	}
 
@@ -556,7 +570,8 @@ cv.text(`${songtime.toFixed(3)} (${(4+songtime).toFixed(3)})\n${noteQueue[0] != 
 		cv.text(error.stack.toString(), "#FF8080", 1400, 300, "monospace", "15", "right")
 		console.log(error.stack)
 	}
-window.requestAnimationFrame(update)
+	
+if (selected.settings.vsync) window.requestAnimationFrame(update)
 }
 
 
@@ -564,56 +579,61 @@ window.requestAnimationFrame(update)
 //updatePrec
 function updatePrec() {
 	try {
-if (songaudios[selected.song] != undefined) songtime = songaudios[selected.song].currentTime;
+	if (songaudios[selected.song] != undefined) songtime = songaudios[selected.song].currentTime;
 
-if (timefunc[0] != undefined) {
-if (performance.now() >= timefunc[0].time && !timefunc[0].executed) {
-	timefunc[0].funct(); timefunc[0].executed = true;
-	timefunc.shift();
-}
-}
-
-for (let i = 0; i < bgDensity; i++) {
-	if (bgElements.length <= bgDensity) bgElements.push({color: shadeColor(randomColor(), 100), time: performance.now(), x: Math.floor(Math.random() * 1536) + 30})
-		else {
-			if (764 * (((performance.now() - bgElements[i].time) + (i*-1)*(20000/bgDensity))/12000) > 764+50) bgElements[i].time = performance.now();
+	if (timefunc[0] != undefined) {
+		let tf_i = 0;
+		for (tf_i = 0; tf_i < timefunc.length; tf_i++) {
+			let currentfunc = timefunc[tf_i]
+			if (performance.now() >= currentfunc.time && !currentfunc.executed) {
+				currentfunc.funct();
+				currentfunc.executed = true;
+			} else break;
 		}
-}
+		timefunc.splice(0, tf_i)
+	}
 
-let rolltime = false
-let ib = 0;
-
-for (i in rollQueue) {
-	i = parseInt(i)
-	if (rollQueue[i].type == 7) ib++;
-	if (i % 2 == 0 && rollQueue[i+1] != undefined) {
-		if ((rollQueue[i].position() >= rollQueue[i].time) && (rollQueue[i].position() < rollQueue[i+1].time)) {
-			rolltime = true; 
-			if (balloon.at != ib && rollQueue[i].type == 7) {
-				console.log(balloon.at, ib)
-				balloon.at = ib;
-				balloon.hits = balloon.hitQueue[balloon.at - 1];
+	for (let i = 0; i < bgDensity; i++) {
+		if (bgElements.length <= bgDensity) bgElements.push({color: shadeColor(randomColor(), 100), time: performance.now(), x: Math.floor(Math.random() * 1536) + 30})
+			else {
+				if (764 * (((performance.now() - bgElements[i].time) + (i*-1)*(20000/bgDensity))/12000) > 764+50) bgElements[i].time = performance.now();
 			}
-			break;
-		} else if (balloon.at == ib) balloon.at = 0;
 	}
-}
 
-if (noteQueue[0] != undefined) {
-	while ((noteQueue[0].time - noteQueue[0].position()) <= (difficulties.hitwindow[selected.difficulty][2])*-1 && !noteQueue[0].hit) {
-		mshits.push([difficulties.hitwindow[selected.difficulty][2]*1000, noteQueue[0].time]);
-		noteQueue[0].hit = true;
-		noteQueue.shift()
-		currentJudgement = ["不可", "#9000D0"];
-		hits[2]++;
-		hits[4] = 0;
-		clearGauge.easier -= (133.333 / songNotes);
-		clearGauge.easy -= (133.333 / songNotes);
-		clearGauge.normal -= (133.333 / songNotes);
-		clearGauge.hard -= (10/3);
-		clearGauge.exhard -= (10);
+	let rolltime = false
+	let ib = 0;
+
+	
+	for (let i = 0; i < rollQueue.length; i++) {
+		if (rollQueue[i].type == 7) ib++;
+		if (i % 2 == 0 && rollQueue[i+1] != undefined) {
+			if ((rollQueue[i].position() >= rollQueue[i].time) && (rollQueue[i].position() < rollQueue[i+1].time)) {
+				rolltime = true; 
+				if (balloon.at != ib && rollQueue[i].type == 7) {
+					console.log(balloon.at, ib)
+					balloon.at = ib;
+					balloon.hits = balloon.hitQueue[balloon.at - 1];
+				}
+				break;
+			} else if (balloon.at == ib) balloon.at = 0;
+		}
 	}
-}
+
+	if (noteQueue[0] != undefined) {
+		while ((noteQueue[0].time - noteQueue[0].position()) <= (difficulties.hitwindow[selected.difficulty][2])*-1 && !noteQueue[0].hit) {
+			mshits.push([difficulties.hitwindow[selected.difficulty][2]*1000, noteQueue[0].time]);
+			noteQueue[0].hit = true;
+			noteQueue.shift()
+			currentJudgement = ["不可", "#9000D0"];
+			hits[2]++;
+			hits[4] = 0;
+			clearGauge.easier -= (133.333 / songNotes);
+			clearGauge.easy -= (133.333 / songNotes);
+			clearGauge.normal -= (133.333 / songNotes);
+			clearGauge.hard -= (10/3);
+			clearGauge.exhard -= (10);
+		}
+	}
 
 if (hitting[0] != undefined && mode == 2) {
 	if (rolltime) {
@@ -889,26 +909,6 @@ function betterTimeout(func, ms) {
 	}
 }
 
-/*
-Mousetrap.bind('enter', function() {
-	if (canSelect) {
-		if (mode == 0) fadetomode(1)
-		if (mode == 1) {
-		switch(selected.selection) {
-			case "song":
-			selected.difficulty = 0
-			selected.selection = "difficulty"
-			break;
-			
-			case "difficulty":
-			fadetomode(2);
-			break;
-			}
-		}
-	}
-});
-*/
-
 Mousetrap.bind(controls[0], function() {
 	if (canSelect) {
 		if (mode == 1) {
@@ -966,7 +966,14 @@ Mousetrap.bind([controls[1], controls[2]], function() {
 							for(i in sfxaudios) {sfxaudios[i].volume = selected.settings.volume/100}
 						};
 						if (selected.difficulty == 1) selected.settings.offset = a;
-						if (selected.difficulty == 4) {
+						if (selected.difficulty == 5) {
+							maxFPS = a
+							if (!selected.settings.vsync) {
+							clearInterval(frameInterval);
+							frameInterval = setInterval(update, 1000/maxFPS);
+							}
+						}
+						if (selected.difficulty == 6) {
 							maxTPS = a;
 							clearInterval(tickInterval);
 							tickInterval = setInterval(updatePrec, 1000/maxTPS);
@@ -976,7 +983,18 @@ Mousetrap.bind([controls[1], controls[2]], function() {
 						range();
 						if (selected.difficulty == 2) selected.settings.amounts[2] = selected.settings.customBuffer;
 						if (selected.difficulty == 3) selected.settings.amounts[3] = selected.settings.defaultGauge;
-						if (selected.difficulty == 4) selected.settings.amounts[4] = maxTPS;
+						if (selected.difficulty == 4) 
+						if (selected.difficulty == 4) {
+							selected.settings.amounts[4] = selected.settings.vsync;
+							if (!selected.settings.vsync) {
+								frameInterval = setInterval(update, 1000/maxFPS);
+							} else {
+								clearInterval(frameInterval);
+								window.requestAnimationFrame(update);
+							}
+						}
+						if (selected.difficulty == 5) selected.settings.amounts[6] = maxFPS;
+						if (selected.difficulty == 6) selected.settings.amounts[6] = maxTPS;
 					}
 				} else fadetomode(2);
 			}
@@ -1115,6 +1133,7 @@ function customChartUpload() {
 	fu.click();
 }
 
+let frameInterval;
 let tickInterval = setInterval(updatePrec, 1000/maxTPS)
 setInterval(() => {tipnum = Math.floor(Math.random() * tips.length)}, 12500)
 

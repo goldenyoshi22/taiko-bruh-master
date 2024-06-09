@@ -1,5 +1,5 @@
 var songdata = [];
-
+var tabledata = [];
 
 /*
 (^^) by yamajet
@@ -1849,6 +1849,7 @@ LEVEL:6
 BALLOON:6,6
 SCOREINIT:1460
 SCOREDIFF:0
+DIFFPLUS:1
 
 #START
 1010202210102000,
@@ -2294,7 +2295,6 @@ SCOREDIFF:0
 0,
 ,
 #END`)
-
 
 /*
 アレア→イデア (Area to Idea) by ケットシー
@@ -8278,4 +8278,57 @@ SCOREDIFF:0
 10010000,
 #BARLINEOFF
 0,
-#END`)
+#END`);
+
+
+
+//tables
+
+//ITDT
+tabledata.push({
+	name: "ITDT",
+	songs: [
+	["Satori ～ 3rd EyEs（2020 Recall） [NORMAL]", "★8", 3],
+	["Airborne Robots [Meltdown]", "★15", 3],
+	["Bad Guy [270]", "★15", 3],
+	["C18H27NO3 [Capsaicin]", "★15", 3],
+	["Imprinting [350]", "★20", 3],
+	["C18H27NO3 [Resiniferatoxin]", "★20", 3],
+	["Satori ～ 3rd EyEs（2020 Recall） [PHANTASM]", "★20", 3]
+	]
+}, {
+	name: "Yoshi",
+	songs: [
+	]
+});
+
+
+
+
+
+function skillPoints(acc) {
+	
+	let rankdata = [];
+
+	return fetch('https://goldenyoshi22.github.io/ranking.json')
+    .then((response) => response.json())
+    .then((json) => {
+		rankdata = json;
+		
+		let count = 0;
+		let gotDiff;
+	
+		for (count = 0; count < rankdata.length; count++) {
+			if (currentSongData.title == rankdata[count].name && songdata[selected.song].startsWith(`\n${LZString.decompress(rankdata[count].minidata) == null ? LZString.decompressFromBase64(rankdata[count].minidata) : LZString.decompress(rankdata[count].minidata)}`)) {
+				gotDiff = rankdata[count].difficulty[selected.difficulty + Math.floor(uracounter / 10)];
+				break;
+			}
+		}
+	
+		if (gotDiff == undefined) return "unranked";
+	
+		return (10.5 * (1.47 ** gotDiff)) ** (acc/100);
+	}).then((sp) => {
+		return sp;
+	});
+}

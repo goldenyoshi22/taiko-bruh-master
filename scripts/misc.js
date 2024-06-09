@@ -61,6 +61,17 @@ function nthIndexOf(string, pattern, n) {
     return i;
 }
 
+function hslToHex(h, s, l) {
+  l /= 100;
+  const a = s * Math.min(l, 1 - l) / 100;
+  const f = n => {
+    const k = (n + h / 30) % 12;
+    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * color).toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+
 function lineOf(strg, need, num=1) {
 	let index = nthIndexOf(strg, need, num);
 	if (index == -1) return 0;
@@ -80,7 +91,11 @@ function mdValue(metadata, chart, num = 1, arra = false, log = false) {
     }
     const line = lines[lineIndex - 1];
     const regexSeparator = line.includes(":") ? ":" : " ";
-    return line.split(regexSeparator)[1].replace(/\n/g, "");
+	let splitLine = line.split(regexSeparator)
+	for (let i = 2; i < splitLine.length; i++) {
+		splitLine[1] = splitLine[1] + regexSeparator + splitLine[i];
+	}
+    return splitLine[1].replace(/\n/g, "");
   }
 
   const result = [];
@@ -153,3 +168,15 @@ function performanceTester(seconds) {
 	}
 	return perf
 }
+
+let weightedAverage = (nums, weights) => {
+  let [sum, weightSum] = weights.reduce(
+    (acc, w, i) => {
+      acc[0] = acc[0] + nums[i] * w;
+      acc[1] = acc[1] + w;
+      return acc;
+    },
+    [0, 0]
+  );
+  return sum / weightSum;
+};

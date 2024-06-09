@@ -1,5 +1,6 @@
 let cid = "gameCanvas";
 let scale = [1, 1]
+var mod = "none"
 
 //EZCanvas
 /*
@@ -11,10 +12,32 @@ image()
 */
 var cv = {
 scale: (w=1, h=1) => {
+	var canvas = document.getElementById(cid);
+	var ctx = canvas.getContext("2d");
+	ctx.setTransform(scale[0], 0, 0, scale[1], 0, 0)
+	ctx.clearRect(0, 0, 1536, 764);
+	ctx.setTransform(1/scale[0], 0, 0, 1/scale[1], 0, 0)
 	scale = [w, h]
 },
 
 rect: (color="#FFFFFF", x=0, y=0, width=50, height=50, stroke=false, shadow=[0, color]) => {
+if (mod == "invert") {
+	let h;
+	if (typeof color == "object") {
+		h = [];
+		for (let i = 0; i < color.length; i++) {
+			h.push(color[i].substr(7, 2))
+			let inverting = parseInt(color[i].substr(1, 6), 16);
+			color[i] = "#" + ((inverting & 0x000000) | (~inverting & 0xFFFFFF)).toString(16).padStart(6, "0") + h[i];
+		}
+	} else {
+		h = color.substr(7, 2)
+		let inverting = parseInt(color.substr(1, 6), 16);
+		color = "#" + ((inverting & 0x000000) | (~inverting & 0xFFFFFF)).toString(16).padStart(6, "0") + h;
+	}
+	shadow[1] = color;
+}
+
 var canvas = document.getElementById(cid);
 var ctx = canvas.getContext("2d");
 ctx.setTransform(scale[0], 0, 0, scale[1], 0, 0)
@@ -39,7 +62,26 @@ ctx.shadowColor = "black";
 ctx.setTransform(1/scale[0], 0, 0, 1/scale[1], 0, 0)
 },
 
+
+
 circ: (color="#FFFFFF", x=0, y=0, radius=50, stroke=false, shadow=[0, color]) => {
+if (mod == "invert") {
+	let h;
+	if (typeof color == "object") {
+		h = [];
+		for (let i = 0; i < color.length; i++) {
+			h.push(color[i].substr(7, 2))
+			let inverting = parseInt(color[i].substr(1, 6), 16);
+			color[i] = "#" + ((inverting & 0x000000) | (~inverting & 0xFFFFFF)).toString(16).padStart(6, "0") + h[i];
+		}
+	} else {
+		h = color.substr(7, 2)
+		let inverting = parseInt(color.substr(1, 6), 16);
+		color = "#" + ((inverting & 0x000000) | (~inverting & 0xFFFFFF)).toString(16).padStart(6, "0") + h;
+	}
+	shadow[1] = color;
+}
+
 var canvas = document.getElementById(cid);
 var ctx = canvas.getContext("2d");
 ctx.setTransform(scale[0], 0, 0, scale[1], 0, 0)
@@ -68,6 +110,8 @@ ctx.shadowColor = "black";
 ctx.setTransform(1/scale[0], 0, 0, 1/scale[1], 0, 0)
 },
 
+
+
 clear: () => {
 var canvas = document.getElementById(cid);
 var ctx = canvas.getContext("2d");
@@ -76,7 +120,26 @@ ctx.clearRect(0, 0, 1536, 764);
 ctx.setTransform(1/scale[0], 0, 0, 1/scale[1], 0, 0)
 },
 
+
+
 text: (text="sample :P", color="#FFDDFF", x=0, y=0, font="monospace", size="20", align="center", stroke=false, shadow=[0, color]) => {
+if (mod == "invert") {
+	let h;
+	if (typeof color == "object") {
+		h = [];
+		for (let i = 0; i < color.length; i++) {
+			h.push(color[i].substr(7, 2))
+			let inverting = parseInt(color[i].substr(1, 6), 16);
+			color[i] = "#" + ((inverting & 0x000000) | (~inverting & 0xFFFFFF)).toString(16).padStart(6, "0") + h[i];
+		}
+	} else {
+		h = color.substr(7, 2)
+		let inverting = parseInt(color.substr(1, 6), 16);
+		color = "#" + ((inverting & 0x000000) | (~inverting & 0xFFFFFF)).toString(16).padStart(6, "0") + h;
+	}
+	shadow[1] = color;
+}
+
 var canvas = document.getElementById(cid);
 var ctx = canvas.getContext("2d");
 ctx.setTransform(scale[0], 0, 0, scale[1], 0, 0)

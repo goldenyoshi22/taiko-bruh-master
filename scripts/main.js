@@ -11,6 +11,38 @@ function starOf(song = undefined, difficulty = undefined) {
 	else return "☆" + (isNaN(starRating(loadChart(false, true, [songdata[selected.song], selected.difficulty]))) ? "?" : starRating(loadChart(false, true, [songdata[selected.song], selected.difficulty])).toFixed(2));
 }
 
+function getEventTime(ev) {
+	lastKeyPressTime = ev.timeStamp;
+	if (ev.key.toLowerCase() == controls[1].toLowerCase() || ev.key.toLowerCase() == controls[2].toLowerCase())
+	if (mode == 2) {
+		hitting.push(1);
+		if (selected.settings.hitsounds) {
+			sfxaudios[4].currentTime = 0;
+			sfxaudios[4].play();
+		}
+	}
+	if (ev.key.toLowerCase() == controls[0].toLowerCase() || ev.key.toLowerCase() == controls[3].toLowerCase())
+	if (mode == 2) {
+		hitting.push(2);
+		if (selected.settings.hitsounds) {
+			sfxaudios[5].currentTime = 0;
+			sfxaudios[5].play();
+		}
+	}
+}
+
+let lastKeyPressTime = 0;
+document.body.addEventListener("keydown", getEventTime);
+document.body.addEventListener("mousedown", (ev) => {
+	document.body.dispatchEvent(
+    new KeyboardEvent("keydown", {
+		key: controls[Math.floor(ev.clientX/window.innerWidth * 4)],
+		bubbles: true,
+		cancelable: false
+    }));
+	Mousetrap.trigger(controls[Math.floor(ev.clientX/window.innerWidth * 4)], "keydown");
+});
+
 //Menu
 let timeStarted = 0;
 let uracounter = 0
@@ -182,7 +214,7 @@ setTimeout(() => {
 	
 			let sp = await skillPoints((hits[0]*100 + hits[1]*50) / (hits[0]+hits[1]+hits[2]))
 	
-			let scoreMessage = `New score achieved on **${currentSongData.title}** (${difficulties.names[selected.difficulty + Math.floor(uracounter%20/10)]} ☆${currentSongData.level}${tableDiff != "" ? " / " + tableDiff : ""}) by *${currentSongData.subtitle.slice(2)}!*${modsToText()}
+			let scoreMessage = `New score achieved on **${currentSongData.title}** (${difficulties.names[selected.difficulty + Math.floor(uracounter%20/10)]} ☆${currentSongData.level}${tableDiff != "" ? " / " + tableDiff : ""}) by *${currentSongData.subtitle.replace(/^--|^\+\+/g, "")}!*${modsToText()}
 - they achieved **"${clearType}"** with ${clearGauge.current().toFixed(1)}% of the ${clearGauge.mode} gauge filled.
 - they got a **${Math.round(((hits[0]*100 + hits[1]*50) / (hits[0]+hits[1]+hits[2])) * 100) / 100}% ${gradeof((hits[0]*100 + hits[1]*50) / (hits[0]+hits[1]+hits[2])).name}** rank.
 *${hits[0]} goods / ${hits[1]} okays / ${hits[2]} misses
@@ -426,7 +458,7 @@ cv.text(`(controls are ${(controls[0] + controls[1] + controls[2] + controls[3])
 
 cv.text(tips[tipnum], ["#FF8080", "#80FFFF"], 768, 715, "pixel2", "35", "center")
 
-cv.text("α.1.2-ish\nhttps://discord.gg/2D2XbD77HD", "#DDDDDD50", 0, 30, "monospace", "25", "left");
+cv.text("α.1.2:1\nhttps://discord.gg/2D2XbD77HD", "#DDDDDD50", 0, 30, "monospace", "25", "left");
 break;
 
 
@@ -459,7 +491,7 @@ case 1:
 		else cv.text(`${selected.mods.songSpeed != 0 ? "~" : ""}${Math.round(mdValue("BPM:", dataOfSelected) * (2 ** (selected.mods.songSpeed / 12)) * 1000) / 1000} BPM`, selected.mods.songSpeed != 0 ? "#D0D0C0" : "#00C0C0", 1485, 65, "pixel", "30", "right");
 
 		cv.text(mdValue("TITLE", dataOfSelected), "#00FFFF", 1075, 150, "pixel", (mdValue("TITLE", dataOfSelected).lengthWithJP() > 24 ? (69 * (24 / mdValue("TITLE", dataOfSelected).lengthWithJP())).toString() : "70"), "center");
-		cv.text(mdValue("SUBTITLE", dataOfSelected).slice(2), "#00FFFF", 1075, 225, "pixel", "35", "center");
+		cv.text(mdValue("SUBTITLE", dataOfSelected).replace(/^--|^\+\+/g, ""), "#00FFFF", 1075, 225, "pixel", "35", "center");
 		
 		cv.text(`experimental: ${starry[selected.song][Math.max(selected.difficulty + (selected.difficulty == 3 ? Math.floor((uracounter % 20) / 10) : 0), 0)]}`, "#00A0A0", 1480, 666, "pixel", "20", "right");
 	}
@@ -553,7 +585,7 @@ break;
 	rrq(100);
 
 	for (i in barQueue) {
-		cv.rect("#FFFFFF60", (playfieldX + 88) + ((barQueue[i].time - barQueue[i].position()) * barQueue[i].bpm*barQueue[i].scroll*3.7), 185, 4, 140)
+		if ((playfieldX + 88) + ((barQueue[i].time - barQueue[i].position()) * barQueue[i].bpm*barQueue[i].scroll*3.7) > playfieldX + 5) cv.rect("#FFFFFF60", (playfieldX + 88) + ((barQueue[i].time - barQueue[i].position()) * barQueue[i].bpm*barQueue[i].scroll*3.7), 185, 4, 140)
 	}
 	
 	for (i in rollQueue) {
@@ -846,10 +878,12 @@ if (hitting[0] != undefined && mode == 2) {
 	}
 	let typecor = [[1, 3], [2, 4], [1, 3], [2, 4], [1], [1], [1], [1]]
 	if (noteQueue[0] != undefined) {
-	let precMS = Math.abs(noteQueue[0].time - noteQueue[0].position())
-	if (typecor[noteQueue[0].type - 1].includes(hitting[0]) && precMS <= difficulties.hitwindow[selected.difficulty][2]) {
-		mshits.push([(noteQueue[0].time - noteQueue[0].position()) * -1000, noteQueue[0].time])
-		if(precMS <= difficulties.hitwindow[selected.difficulty][0]) {
+	let precInput = lastKeyPressTime/1000 - timeStarted/1000 - 0.004;
+	let precMS = noteQueue[0].time - precInput
+	//console.log(`${noteQueue[0].time}\n${precInput}\n${precMS}`);
+	if (typecor[noteQueue[0].type - 1].includes(hitting[0]) && Math.abs(precMS) <= difficulties.hitwindow[selected.difficulty][2]) {
+		mshits.push([(precMS) * -1000, noteQueue[0].time])
+		if(Math.abs(precMS) <= difficulties.hitwindow[selected.difficulty][0]) {
 			currentJudgement = ["良", "#FFA000"];
 			hits[0]++;
 			hits[4]++;
@@ -859,7 +893,7 @@ if (hitting[0] != undefined && mode == 2) {
 			if (clearGauge.hard != 0) clearGauge.hard += 0.075;
 			if (clearGauge.exhard != 0) clearGauge.exhard += 0.05;
 		}
-		else if(precMS <= difficulties.hitwindow[selected.difficulty][1]) {
+		else if(Math.abs(precMS) <= difficulties.hitwindow[selected.difficulty][1]) {
 			currentJudgement = ["可", "#80FFFF"];
 			hits[1]++;
 			hits[4]++;
@@ -963,7 +997,7 @@ function loadChart(ret=false, notPlaying=false, data=false) {
 		fullData: data[0],
 		course: data[1],
 		bpm: parseFloat(mdValue("BPM:", data[0])),
-		offset: Math.max(0, parseFloat(mdValue("OFFSET", data[0])))-(4-selected.settings.offset/1000),
+		offset: Math.max(0, parseFloat(mdValue("OFFSET:", data[0])))-(4-selected.settings.offset/1000),
 		courseData: "pending",
 		scroll: "pending",
 		measure: "pending"
@@ -973,7 +1007,7 @@ function loadChart(ret=false, notPlaying=false, data=false) {
 		fullData: songdata[selected.song],
 		course: (selected.difficulty != 3 ? selected.difficulty : (uracounter % 20 < 10 ? 3 : 4)),
 		bpm: parseFloat(mdValue("BPM:", songdata[selected.song])),
-		offset: Math.max(0, parseFloat(mdValue("OFFSET", songdata[selected.song])))-(4-selected.settings.offset/1000),
+		offset: Math.max(0, parseFloat(mdValue("OFFSET:", songdata[selected.song])))-(4-selected.settings.offset/1000),
 		courseData: "pending",
 		scroll: "pending",
 		measure: "pending"
@@ -1163,13 +1197,6 @@ Mousetrap.bind(controls[0], function() {
 			break;
 			}
 		}
-		if (mode == 2) {
-			hitting.push(2)
-			if (selected.settings.hitsounds) {
-				sfxaudios[5].currentTime = 0;
-				sfxaudios[5].play();
-			}
-		}
 	}
 }, "keydown")
 
@@ -1247,13 +1274,6 @@ Mousetrap.bind([controls[1], controls[2]], function() {
 			break;
 		}
 		}
-		if (mode == 2) {
-			hitting.push(1);
-			if (selected.settings.hitsounds) {
-				sfxaudios[4].currentTime = 0;
-				sfxaudios[4].play();
-			}
-		}
 		if (mode == 3) fadetomode(1);
 	}
 }, "keydown")
@@ -1293,13 +1313,6 @@ Mousetrap.bind(controls[3], function() {
 			}
 			}
 			break;
-			}
-		}
-		if (mode == 2) {
-			hitting.push(2);
-			if (selected.settings.hitsounds) {
-				sfxaudios[5].currentTime = 0;
-				sfxaudios[5].play();
 			}
 		}
 	}

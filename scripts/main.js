@@ -1353,7 +1353,8 @@ Mousetrap.bind(selected.settings.controls[3], function() {
 }, "keydown")
 }
 
-controlInit(selected.settings.controls);
+if (!selected.settings.controls.includes("")) controlInit(selected.settings.controls);
+else controlInit(["d, f, j, k"]);
 
 Mousetrap.bind("shift+j+p", function() {convertLanguage("JP")})
 

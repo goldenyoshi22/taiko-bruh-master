@@ -13,7 +13,7 @@ function starOf(song = undefined, difficulty = undefined) {
 
 function getEventTime(ev) {
 	lastKeyPressTime = ev.timeStamp;
-	if (ev.key.toLowerCase() == controls[1].toLowerCase() || ev.key.toLowerCase() == controls[2].toLowerCase())
+	if (ev.key.toLowerCase() == selected.settings.controls[1].toLowerCase() || ev.key.toLowerCase() == selected.settings.controls[2].toLowerCase())
 	if (mode == 2) {
 		hitting.push(1);
 		if (selected.settings.hitsounds) {
@@ -21,7 +21,7 @@ function getEventTime(ev) {
 			sfxaudios[4].play();
 		}
 	}
-	if (ev.key.toLowerCase() == controls[0].toLowerCase() || ev.key.toLowerCase() == controls[3].toLowerCase())
+	if (ev.key.toLowerCase() == selected.settings.controls[0].toLowerCase() || ev.key.toLowerCase() == selected.settings.controls[3].toLowerCase())
 	if (mode == 2) {
 		hitting.push(2);
 		if (selected.settings.hitsounds) {
@@ -36,11 +36,11 @@ document.body.addEventListener("keydown", getEventTime);
 document.body.addEventListener("mousedown", (ev) => {
 	document.body.dispatchEvent(
     new KeyboardEvent("keydown", {
-		key: controls[Math.floor(ev.clientX/window.innerWidth * 4)],
+		key: selected.settings.controls[Math.floor(ev.clientX/window.innerWidth * 4)],
 		bubbles: true,
 		cancelable: false
     }));
-	Mousetrap.trigger(controls[Math.floor(ev.clientX/window.innerWidth * 4)], "keydown");
+	Mousetrap.trigger(selected.settings.controls[Math.floor(ev.clientX/window.innerWidth * 4)], "keydown");
 });
 
 //Menu
@@ -57,9 +57,10 @@ let canSelect = true
 */
 let selected = {
 	song: 0,
-	difficulty: -2,
+	difficulty: -3,
 	selection: "song",
 	settings: {
+		controls: ["d", "f", "j", "k"],
 		volume: 25,
 		offset: 0,
 		customBuffer: false,
@@ -67,6 +68,8 @@ let selected = {
 		GAS: false,
 		defaultGauge: "None",
 		vsync: true,
+		maxFPS: 60,
+		maxTPS: 240,
 		names: [
 			"Volume (%)", "Chart Offset (ms)", "Audio-Ran Notes", "Default Gauge", "VSync", "Max FPS", "Max TPS", "Upload Custom Chart"
 		],
@@ -91,6 +94,23 @@ let selected = {
 		songSpeed: 0
 	}
 }
+
+if (localStorage.settings != undefined && localStorage.settings != "[object Object]") {
+	let parsedSettings = JSON.parse(localStorage.settings);
+	selected.settings.controls = parsedSettings.controls;
+	selected.settings.volume = parsedSettings.volume;
+	selected.settings.offset = parsedSettings.offset;
+	selected.settings.customBuffer = parsedSettings.customBuffer;
+	selected.settings.hitsounds = parsedSettings.hitsounds;
+	selected.settings.GAS = parsedSettings.GAS;
+	selected.settings.defaultGauge = parsedSettings.defaultGauge;
+	selected.settings.maxFPS = parsedSettings.maxFPS;
+	selected.settings.maxTPS = parsedSettings.maxTPS;
+	selected.settings.amounts = parsedSettings.amounts;
+}
+setInterval(() => {
+	localStorage.settings = JSON.stringify(selected.settings);
+}, 10000)
 
 function modApply() {
 	starry = [];
@@ -125,7 +145,7 @@ function scoreIncrease() {
 }
 
 //Gameplay
-var controls = ["d", "f", "j", "k"];
+//nothing here anymore
 
 
 //Values of things
@@ -174,7 +194,7 @@ let cansubmit = false;
 let scoreQueue = [];
 setTimeout(() => {
 	setInterval(async () => {
-		console.log(performance.now());
+		//console.log(performance.now());
 		if ((Math.floor((performance.now() - performanceStart) / 250) * 250) % 5000 == 0 && scoreQueue[0]) {
 			
 			let clearType;
@@ -244,8 +264,8 @@ ${sp == "unranked" ? "" : "*experimental: " + sp.toFixed(1) + "sp*"}`
 	}, 5000)
 }, 5000)
 
-let maxFPS = 60
-let maxTPS = 240
+//let maxFPS = 60
+//let maxTPS = 240
 
 let tableDiff = ""
 
@@ -328,10 +348,10 @@ let starry = [];
 
 function sload() {
   for (let i = 0; i < songdata.length; i++) {
-	  songaudios.push(new Audio(mdValue("WAVE", songdata[i])));
+	  songaudios.push(new Audio(mdValue("WAVE", songdata[i]) + "?v=0122"));
   }
   for (let i = 0; i < sfxaudios.length; i++) {
-	  sfxaudios[i] = new Audio(`sfx/${sfxaudios[i]}.wav`);
+	  sfxaudios[i] = new Audio(`sfx/${sfxaudios[i]}.wav?v=0122`);
   }
 }
 
@@ -370,7 +390,7 @@ let fadetomode = async (m) => {
 	}
 	
 	if (mode == 1) {
-		balloon.at = 0; balloon.next = 1; balloon.hits = 0; balloon.hitQueue = []; selected.selection = "song"; selected.difficulty = -2; clearGauge.easier = 0; clearGauge.easy = 0; clearGauge.normal = 0; clearGauge.hard = 100; clearGauge.exhard = 100; combo = 0; hits = [0, 0, 0, 0, 0, 0]; currentJudgement = ["", ""]; clearShow = false; mshits = []; gogo = false; score = 0;
+		balloon.at = 0; balloon.next = 1; balloon.hits = 0; balloon.hitQueue = []; selected.selection = "song"; selected.difficulty = -3; clearGauge.easier = 0; clearGauge.easy = 0; clearGauge.normal = 0; clearGauge.hard = 100; clearGauge.exhard = 100; combo = 0; hits = [0, 0, 0, 0, 0, 0]; currentJudgement = ["", ""]; clearShow = false; mshits = []; gogo = false; score = 0;
 		
 		//if (uracounter % 20 >= 10) {
 			//let a = [difficulties.names[3], difficulties.colors[3]];	
@@ -433,8 +453,8 @@ let previousRender = performance.now();
 function update() {
 window.requestAnimationFrame(update);
 
-if (performance.now() - previousRender > 1000/maxFPS || selected.settings.vsync) {
-	previousRender = performance.now() - ((performance.now() - previousRender) % 1000/maxFPS);
+if (performance.now() - previousRender > 1000/selected.settings.maxFPS || selected.settings.vsync) {
+	previousRender = performance.now() - ((performance.now() - previousRender) % 1000/selected.settings.maxFPS);
 cv.clear();
 
 try {
@@ -453,12 +473,12 @@ break;
 //title
 case 0:
 cv.text("taiko bruh master", ["#FF0000", "#00FFFF"], 768, 275, "pixel", "90", "center");
-cv.text(`press ${controls[1].toUpperCase()} / ${controls[2].toUpperCase()} to start!`, `#FFFFFF${numtobase(Math.floor(Math.abs(Math.sin((performance.now()-500) / 450)*100)) + 5, 16).padStart(2, "0")}`, 768, 400, "pixel", "65", "center");
-cv.text(`(controls are ${(controls[0] + controls[1] + controls[2] + controls[3]).toUpperCase()}.)`, `#FFFFFFA0`, 768, 600, "pixel", "40", "center");
+cv.text(`press ${selected.settings.controls[1].toUpperCase()} / ${selected.settings.controls[2].toUpperCase()} to start!`, `#FFFFFF${numtobase(Math.floor(Math.abs(Math.sin((performance.now()-500) / 450)*100)) + 5, 16).padStart(2, "0")}`, 768, 400, "pixel", "65", "center");
+cv.text(`(controls are ${(selected.settings.controls[0] + selected.settings.controls[1] + selected.settings.controls[2] + selected.settings.controls[3]).toUpperCase()}.)`, `#FFFFFFA0`, 768, 600, "pixel", "40", "center");
 
 cv.text(tips[tipnum], ["#FF8080", "#80FFFF"], 768, 715, "pixel2", "35", "center")
 
-cv.text("α.1.2:1\nhttps://discord.gg/2D2XbD77HD", "#DDDDDD50", 0, 30, "monospace", "25", "left");
+cv.text("α.1.2:2\nhttps://discord.gg/2D2XbD77HD", "#DDDDDD50", 0, 30, "monospace", "25", "left");
 break;
 
 
@@ -499,6 +519,9 @@ case 1:
 	cv.rect("#FFA000", 720, 580, 100, 100);
 	if (selected.difficulty != -1) cv.rect("#000000", 725, 585, 90, 90);
 	cv.text("Back", (selected.difficulty != -1 ? "#FFA000" : "#000000"), 770, 635, "pixel", "20", "center")
+	//cv.rect("#FFA0FF", 720, 580, 100, 100);
+	/*if (selected.difficulty != -2) cv.rect("#000000", 725, 585, 90, 90);
+	cv.text("Mods", (selected.difficulty != -2 ? "#FFA0FF" : "#000000"), 770, 635, "pixel", "20", "center")*/
 	
 
 	if (selected.song != -1) {
@@ -629,7 +652,7 @@ break;
 	//cv.text(`BPM ${ingameBPM}`, "#FFFFFF80", 700, 525, "pixel", "20", "left")
 	//cv.text(`☆${starRating(noteQueue).toFixed(2)}`, "#FFFFFF80", 700, 125, "pixel", "20", "center")
 	//cv.text(`${JSON.stringify(hitting)}`, "#FFFFFF80", 700, 125, "pixel", "20", "center")
-	cv.text((hits[4] > 0 ? hits[4] : ""), (hits[1] == 0 && hits[2] == 0 ? "#FFB080A0" : (hits[2] == 0 ? "#FFFFA0A0" : "#FFFFFFA0")), 180, 253, "pixel2", "45", "right")
+	cv.text((hits[4] > 0 ? hits[4] : ""), (hits[1] == 0 && hits[2] == 0 ? "#FFB080A0" : (hits[2] == 0 ? "#FFFFA0A0" : "#FFFFFFA0")), playfieldX - 20, 253, "pixel2", "45", "right")
 	cv.text(`${hits[0]}\n${hits[1]}\n${hits[2]}\n${hits[3]}\n${hits[5]}`, "#FFFFFF", 400, 420, "pixel", "35", "right")
 	cv.text(`${Math.round(((hits[0]*100 + hits[1]*50) / (hits[0]+hits[1]+hits[2])) * 100) / 100}%`, "#FFFFFF", 240, 600, "pixel", "35", "left")
 	cv.text(score, "#FFFFFF", 240, 380, "pixel", "40", "left")
@@ -721,17 +744,19 @@ break;
 
 	cv.rect("#FFFFFF", graphStartX, (graphStartY - ((graphEndY - graphStartY)*0.5)), (graphEndX - graphStartX), (graphEndY - graphStartY), 5)
 	
+	let meanMS = (mshits.map(item => item[0])).reduce((a, b) => a + b) / mshits.length;
+	
 	cv.text(`${dHW[2] * -1000}ms`, "#B0B0B0A0", graphStartX - 10, graphStartY + ((graphEndY - graphStartY)*-0.5) + 10, "pixel", "20", "right")
-	cv.text(`${dHW[1] * -1000}ms`, "#B0B0B0A0", graphStartX - 10, graphStartY + ((graphEndY - graphStartY)*-(dHW[1] / dHW[2])*0.5) + 7.5, "pixel", "18", "right")
-	cv.text(`${dHW[0] * -1000}ms`, "#B0B0B0A0", graphStartX - 10, graphStartY + ((graphEndY - graphStartY)*-(dHW[0] / dHW[2])*0.5) + 6, "pixel", "18", "right")
-	cv.text(`0ms`, "#B0B0B080", graphStartX - 10, graphStartY + 5, "pixel", "20", "right")
-	cv.text(`${dHW[0] * 1000}ms`, "#B0B0B0A0", graphStartX - 10, graphStartY + ((graphEndY - graphStartY)*(dHW[0] / dHW[2])*0.5) + 3, "pixel", "18", "right")
-	cv.text(`${dHW[1] * 1000}ms`, "#B0B0B0A0", graphStartX - 10, graphStartY + ((graphEndY - graphStartY)*(dHW[1] / dHW[2])*0.5) + 1.5, "pixel", "18", "right")
+	cv.text(`${dHW[1] * -1000}ms`, "#B0B0B080", graphStartX - 10, graphStartY + ((graphEndY - graphStartY)*-(dHW[1] / dHW[2])*0.5) + 7.5, "pixel", "16", "right")
+	cv.text(`${dHW[0] * -1000}ms`, "#B0B0B080", graphStartX - 10, graphStartY + ((graphEndY - graphStartY)*-(dHW[0] / dHW[2])*0.5) + 6, "pixel", "16", "right")
+	cv.text(`${Math.round(meanMS * 10) / 10}ms`, "#B0B0B0A0", graphStartX - 10, graphStartY + ((graphEndY - graphStartY)*(meanMS/1000 / dHW[2])*0.5) + 6, "pixel", "20", "right")
+	cv.text(`${dHW[0] * 1000}ms`, "#B0B0B080", graphStartX - 10, graphStartY + ((graphEndY - graphStartY)*(dHW[0] / dHW[2])*0.5) + 3, "pixel", "16", "right")
+	cv.text(`${dHW[1] * 1000}ms`, "#B0B0B080", graphStartX - 10, graphStartY + ((graphEndY - graphStartY)*(dHW[1] / dHW[2])*0.5) + 1.5, "pixel", "16", "right")
 	cv.text(`${dHW[2] * 1000}ms`, "#B0B0B0A0", graphStartX - 10, graphStartY + ((graphEndY - graphStartY)*0.5), "pixel", "20", "right")
 	
 	cv.rect("#59B0B080", graphStartX+2.5, graphStartY + ((graphEndY - graphStartY)*(dHW[1]*-1 / dHW[2])*0.5), (graphEndX - graphStartX)-5, (((graphEndY - graphStartY)*-(dHW[1] / dHW[2])*0.5) - ((graphEndY - graphStartY)*-(dHW[0] / dHW[2])*0.5)) * -1)
 	cv.rect("#B06D0080", graphStartX+2.5, graphStartY + ((graphEndY - graphStartY)*(dHW[0]*-1 / dHW[2])*0.5), (graphEndX - graphStartX)-5, ((graphEndY - graphStartY)*-(dHW[0] / dHW[2])*0.5) * -1)
-	cv.rect("#FFA00040", graphStartX+2.5, graphStartY - 1.5, (graphEndX - graphStartX)-10, 3)
+	cv.rect("#FFA00040", graphStartX+2.5, graphStartY + ((graphEndY - graphStartY)*(meanMS/1000 / dHW[2])*0.5), (graphEndX - graphStartX)-10, 3)
 	cv.rect("#B06D0080", graphStartX+2.5, graphStartY + ((graphEndY - graphStartY)*(dHW[0] / dHW[2])*0.5), (graphEndX - graphStartX)-5, ((graphEndY - graphStartY)*-(dHW[0] / dHW[2])*0.5))
 	cv.rect("#59B0B080", graphStartX+2.5, graphStartY + ((graphEndY - graphStartY)*(dHW[1] / dHW[2])*0.5), (graphEndX - graphStartX)-5, ((graphEndY - graphStartY)*-(dHW[1] / dHW[2])*0.5) - ((graphEndY - graphStartY)*-(dHW[0] / dHW[2])*0.5))
 	
@@ -806,7 +831,7 @@ cv.text(`${songtime.toFixed(3)} (${(4+songtime).toFixed(3)})\n${noteQueue[0] != 
 
 //updatePrec
 function updatePrec() {
-	setTimeout(updatePrec, 1000 / maxTPS);
+	setTimeout(updatePrec, 1000 / selected.settings.maxTPS);
 	try {
 	if (songaudios[selected.song] != undefined) songtime = songaudios[selected.song].currentTime;
 
@@ -1025,7 +1050,7 @@ function loadChart(ret=false, notPlaying=false, data=false) {
 		}
 		clearGauge.hard = 100; clearGauge.exhard = 100;
 	}
-	console.log(chartData)
+	//console.log(chartData)
 	chartData.scroll = 1
 	chartData.measure = 4/4;
 	if(ret) return chartData
@@ -1167,11 +1192,11 @@ function betterTimeout(func, ms) {
 }
 
 function controlInit(keys = ["d", "f", "j", "k"]) {
-for (let i = 0; i < controls.length; i++) {
-	Mousetrap.unbind(controls[i], "keydown");
+for (let i = 0; i < selected.settings.controls.length; i++) {
+	Mousetrap.unbind(selected.settings.controls[i], "keydown");
 }
-controls = keys;
-Mousetrap.bind(controls[0], function() {
+selected.settings.controls = keys;
+Mousetrap.bind(selected.settings.controls[0], function() {
 	if (canSelect) {
 		if (mode == 1) {
 			switch(selected.selection) {
@@ -1193,14 +1218,14 @@ Mousetrap.bind(controls[0], function() {
 			case "difficulty":
 			sfxaudios[1].currentTime = 0;
 			sfxaudios[1].play();
-			if (selected.difficulty > -1) selected.difficulty--
+			if (selected.difficulty > -1 && (selected.difficulty > -1 || selected.song > -1)) selected.difficulty--
 			break;
 			}
 		}
 	}
 }, "keydown")
 
-Mousetrap.bind([controls[1], controls[2]], function() {
+Mousetrap.bind([selected.settings.controls[1], selected.settings.controls[2]], function() {
 	if (canSelect) {
 		if (mode == 0) fadetomode(1)
 		if (mode == 1) {
@@ -1210,6 +1235,10 @@ Mousetrap.bind([controls[1], controls[2]], function() {
 			case "song":
 			selected.difficulty = 0
 			selected.selection = "difficulty"
+			break;
+			
+			case "mods":
+			
 			break;
 			
 			case "difficulty":
@@ -1228,16 +1257,16 @@ Mousetrap.bind([controls[1], controls[2]], function() {
 						};
 						if (selected.difficulty == 1) selected.settings.offset = a;
 						if (selected.difficulty == 5) {
-							maxFPS = a
+							selected.settings.maxFPS = a
 							//if (!selected.settings.vsync) {
 							//clearInterval(frameInterval);
-							//frameInterval = setInterval(update, 1000/maxFPS);
+							//frameInterval = setInterval(update, 1000/selected.settings.maxFPS);
 							//}
 						}
 						if (selected.difficulty == 6) {
-							maxTPS = a;
+							selected.settings.maxTPS = a;
 							//clearInterval(tickInterval);
-							//tickInterval = setInterval(updatePrec, 1000/maxTPS);
+							//tickInterval = setInterval(updatePrec, 1000/selected.settings.maxTPS);
 						}
 						}
 					} else {
@@ -1248,20 +1277,25 @@ Mousetrap.bind([controls[1], controls[2]], function() {
 						if (selected.difficulty == 4) {
 							selected.settings.amounts[4] = selected.settings.vsync;
 							if (!selected.settings.vsync) {
-								//frameInterval = setInterval(update, 1000/maxFPS);
+								//frameInterval = setInterval(update, 1000/selected.settings.maxFPS);
 							} else {
 								//clearInterval(frameInterval);
 								//window.requestAnimationFrame(update);
 							}
 						}
-						if (selected.difficulty == 5) selected.settings.amounts[6] = maxFPS;
-						if (selected.difficulty == 6) selected.settings.amounts[6] = maxTPS;
+						if (selected.difficulty == 5) selected.settings.amounts[6] = selected.settings.maxFPS;
+						if (selected.difficulty == 6) selected.settings.amounts[6] = selected.settings.maxTPS;
 					}
 				} else fadetomode(2);
 			}
 			else {
+				if (selected.difficulty == -2) {
+					selected.selection = "mods";
+					selected.difficulty = 0;
+					break;
+				}
 				selected.selection = "song"; 
-				selected.difficulty = -2;
+				selected.difficulty = -3;
 				/*if (uracounter % 20 >= 10) {
 				let a = [difficulties.names[3], difficulties.colors[3]];
 				difficulties.names[3] = difficulties.names[4];
@@ -1278,7 +1312,7 @@ Mousetrap.bind([controls[1], controls[2]], function() {
 	}
 }, "keydown")
 
-Mousetrap.bind(controls[3], function() {
+Mousetrap.bind(selected.settings.controls[3], function() {
 	if (canSelect) {
 		if (mode == 1) {
 			switch(selected.selection) {
@@ -1319,7 +1353,7 @@ Mousetrap.bind(controls[3], function() {
 }, "keydown")
 }
 
-controlInit(["d", "f", "j", "k"]);
+controlInit(selected.settings.controls);
 
 Mousetrap.bind("shift+j+p", function() {convertLanguage("JP")})
 
@@ -1339,7 +1373,7 @@ Mousetrap.bind("shift+s+d", function() {
 			console.log(temp)
 			return temp
 		}
-		for (let i = 0; i < songdata.length; i++) {c.push({'data': songdata[i], 'audio': songaudios[i], 'starry': starry[i]})}
+		for (let i = 0; i < songdata.length; i++) {c.push({'data': songdata[i], 'audio': songaudios[i], 'starry': starry[i], 'bpm': songbpms[i]})}
 		c.sort(function(a, b) {
 			return ((level(a.data) < level(b.data)) ? -1 : ((level(a.data) == level(b.data)) ? 0 : 1));
 		});
@@ -1347,6 +1381,7 @@ Mousetrap.bind("shift+s+d", function() {
 			songdata[i] = c[i].data;
 			songaudios[i] = c[i].audio;
 			starry[i] = c[i].starry;
+			songbpms[i] = c[i].bpm;
 		}
 	}
 })
@@ -1356,6 +1391,7 @@ Mousetrap.bind("esc", function() {
 	if (mode == 1) fadetomode(0)
 	if (mode == 2 && noteQueue.length > 0) {
 		while (noteQueue.length > 0) noteQueue.shift();
+		while (barQueue.length > 0) barQueue.shift();
 		while (timefunc.length > 0) timefunc.shift();
 		fadetomode(1);
 	}
@@ -1370,6 +1406,15 @@ Mousetrap.bind("s+c+p", function() {
 		sfxaudios[3].play();
 	}
 })
+
+Mousetrap.bind("shift+k+b", function() {
+	let pendingKB = [];
+	pendingKB.push(prompt("Input your left ka key. (Key #1)"));
+	pendingKB.push(prompt("Input your left don key. (Key #2)"));
+	pendingKB.push(prompt("Input your right don key. (Key #3)"));
+	pendingKB.push(prompt("Input your right ka key. (Key #4)"));
+	controlInit(pendingKB);
+});
 
 Mousetrap.bind("shift+right", function() {
 	playfieldX += 5;
@@ -1401,14 +1446,23 @@ function customChartUpload() {
 		 
 		 console.log(file.audio.type, file.data.type);
 		 let reader2 = new FileReader();
+		 let readAsBinaryYet = false;
 		 reader2.onload = function(e) {
+			let encodingMethod = jschardet.detect(e.target.result).encoding;
+			//console.log(encodingMethod);
+			if (!readAsBinaryYet) {
+				readAsBinaryYet = true;
+				reader2.readAsText(file.data, encodingMethod);
+			} else {
 			console.log(e.target.result);
 			songdata.push(e.target.result);
 			songdata[songdata.length-1] = songdata[songdata.length-1].replaceAll("\r", "")
 			songINIT();
 			console.log(file.audio.type, file.data.type);
+			}
 		 };
-		 reader2.readAsText(file.data, 'shift-jis');
+		 //reader2.readAsText(file.data, 'shift-jis');
+		 reader2.readAsBinaryString(file.data);
 		 
 		 //selected.settings.customBuffer = true; selected.settings.amounts[2] = true;
 	};
@@ -1416,7 +1470,7 @@ function customChartUpload() {
 }
 
 let frameInterval;
-//let tickInterval = setInterval(updatePrec, 1000/maxTPS)
+//let tickInterval = setInterval(updatePrec, 1000/selected.settings.maxTPS)
 updatePrec();
 setInterval(() => {tipnum = Math.floor(Math.random() * tips.length)}, 12500)
 

@@ -37,11 +37,11 @@ document.body.addEventListener("touchstart", (ev) => {
     let touch = touches[0] ?? changedTouches[0];
 	document.body.dispatchEvent(
     new KeyboardEvent("keydown", {
-		key: controls[Math.floor(touch.pageX/window.innerWidth * 4)],
+		key: selected.settings.controls[Math.floor(touch.pageX/window.innerWidth * 4)],
 		bubbles: true,
 		cancelable: false
     }));
-	Mousetrap.trigger(controls[Math.floor(touch.pageX/window.innerWidth * 4)], "keydown");
+	Mousetrap.trigger(selected.settings.controls[Math.floor(touch.pageX/window.innerWidth * 4)], "keydown");
 });
 
 //Menu

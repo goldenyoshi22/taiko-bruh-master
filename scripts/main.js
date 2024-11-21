@@ -32,15 +32,16 @@ function getEventTime(ev) {
 }
 
 let lastKeyPressTime = 0;
-document.body.addEventListener("keydown", getEventTime);
-document.body.addEventListener("mousedown", (ev) => {
+document.body.addEventListener("touchstart", (ev) => {
+    let { touches, changedTouches } = ev.originalEvent ?? ev;
+    let touch = touches[0] ?? changedTouches[0];
 	document.body.dispatchEvent(
     new KeyboardEvent("keydown", {
-		key: selected.settings.controls[Math.floor(ev.clientX/window.innerWidth * 4)],
+		key: controls[Math.floor(touch.pageX/window.innerWidth * 4)],
 		bubbles: true,
 		cancelable: false
     }));
-	Mousetrap.trigger(selected.settings.controls[Math.floor(ev.clientX/window.innerWidth * 4)], "keydown");
+	Mousetrap.trigger(controls[Math.floor(touch.pageX/window.innerWidth * 4)], "keydown");
 });
 
 //Menu
@@ -478,7 +479,7 @@ cv.text(`(controls are ${(selected.settings.controls[0] + selected.settings.cont
 
 cv.text(tips[tipnum], ["#FF8080", "#80FFFF"], 768, 715, "pixel2", "35", "center")
 
-cv.text("α.1.2:2\nhttps://discord.gg/2D2XbD77HD", "#DDDDDD50", 0, 30, "monospace", "25", "left");
+cv.text("α.1.2:3\nhttps://discord.gg/2D2XbD77HD", "#DDDDDD50", 0, 30, "monospace", "25", "left");
 break;
 
 

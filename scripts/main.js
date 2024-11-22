@@ -43,6 +43,7 @@ document.body.addEventListener("touchstart", (ev) => {
 		cancelable: false
     }));
 	Mousetrap.trigger(selected.settings.controls[Math.floor(touch.pageX/window.innerWidth * 4)], "keydown");
+	ev.preventDefault();
 });
 
 //Menu

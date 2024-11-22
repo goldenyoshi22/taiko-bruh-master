@@ -25,7 +25,7 @@ background-color: black;
 color: #FF0000;
 font-size: 15px;
 overflow: hidden;
-touch-action: manipulation !important;
+touch-action: none !important;
 }
 
 .unselectable {

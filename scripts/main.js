@@ -356,6 +356,27 @@ function sload() {
   for (let i = 0; i < sfxaudios.length; i++) {
 	  sfxaudios[i] = new Audio(`sfx/${sfxaudios[i]}.wav?v=0122`);
   }
+  
+  // thanks gpt lol
+  setTimeout(() => {
+        for (let i = 0; i < songaudios.length; i++) {
+            let audio = songaudios[i];
+            if (audio.readyState < 4) {
+                console.warn(`song ${audio.src} was not loaded, loading the mp3 version instead`);
+                let mp3Src = audio.src.replace(/\.ogg/, '.mp3');
+                audio.src = mp3Src;
+                audio.load();
+				
+                audio.addEventListener('canplaythrough', () => {
+                    console.log(`fallback audio ${mp3Src} loaded successfully`);
+                });
+
+                audio.addEventListener('error', () => {
+                    console.error(`failed to load fallback audio ${mp3Src}`);
+                });
+            }
+        }
+    }, 5000); // 5-second timeout
 }
 
 //other stuff

@@ -12,7 +12,7 @@ Easy: ☆1
 songdata.push(`TITLE:(^^)
 SUBTITLE:--yamajet
 BPM:140
-WAVE:songs/0foon/(^^)_a2.opus
+WAVE:songs/0foon/(^^)_a2.ogg
 OFFSET:-0.7
 DEMOSTART:0.7
 MAKER:goldenyoshi22
@@ -89,7 +89,7 @@ Easy: ☆2+
 songdata.push(`TITLE:(^^) (Takeshita Remix)
 SUBTITLE:--Takeshita (Original by yamajet)
 BPM:220
-WAVE:songs/0foon2/foon2.opus
+WAVE:songs/0foon2/foon2.ogg
 OFFSET:-0.163
 DEMOSTART:0.163
 MAKER:goldenyoshi22
@@ -188,7 +188,7 @@ Easy: ☆4+
 songdata.push(`TITLE:3amba cat
 SUBTITLE:--asahi3
 BPM:128
-WAVE:songs/3amba cat/3amba cat.opus
+WAVE:songs/3amba cat/3amba cat.ogg
 DEMOSTART:15.703
 OFFSET:-0.703
 MAKER:goldenyoshi22
@@ -886,7 +886,7 @@ Easy: ☆2
 songdata.push(`TITLE:Absurd Gaff
 SUBTITLE:--siromaru
 BPM:160
-WAVE:songs/Absurd Gaff/absurd gaff_a2.opus
+WAVE:songs/Absurd Gaff/absurd gaff_a2.ogg
 DEMOSTART:60.709
 OFFSET:-0.709
 MAKER:goldenyoshi22
@@ -2306,7 +2306,7 @@ Easy: ☆3+
 songdata.push(`TITLE:アレア→イデア
 SUBTITLE:--ケットシー (From BOF2009)
 BPM:132
-WAVE:songs/Area to Idea/area-idea.opus
+WAVE:songs/Area to Idea/area-idea.ogg
 DEMOSTART:45.2164
 OFFSET:-1.58
 MAKER:goldenyoshi22
@@ -2711,7 +2711,7 @@ Easy: ☆5 or idk
 songdata.push(`TITLE:disturbed tranquility
 SUBTITLE:--goldenyoshi22
 BPM:172
-WAVE:songs/disturbed tranquility/disturbed_tranquility.opus
+WAVE:songs/disturbed tranquility/disturbed_tranquility.ogg
 DEMOSTART:55.813
 OFFSET:0
 MAKER:goldenyoshi22
@@ -3551,7 +3551,7 @@ Easy: ☆6+
 songdata.push(`TITLE:Giant Marauding Godless Killing Machine
 SUBTITLE:--Cardboard Box
 BPM:290
-WAVE:songs/GMGKM/Giant Marauding Godless Killing Machine.opus
+WAVE:songs/GMGKM/Giant Marauding Godless Killing Machine.ogg
 DEMOSTART:41.3793
 OFFSET:0
 MAKER:goldenyoshi22
@@ -4302,7 +4302,7 @@ Easy: ☆1
 songdata.push(`TITLE:lest
 SUBTITLE:--ABE3
 BPM:69
-WAVE:songs/lest/lest.opus
+WAVE:songs/lest/lest.ogg
 DEMOSTART:56.359
 OFFSET:-0.707
 MAKER:goldenyoshi22
@@ -4568,7 +4568,7 @@ Easy: ☆5
 songdata.push(`TITLE:NS22
 SUBTITLE:--3034
 BPM:222
-WAVE:songs/NS22/ns22.opus
+WAVE:songs/NS22/ns22.ogg
 DEMOSTART:105.009
 OFFSET:-0.144
 MAKER:goldenyoshi22
@@ -5274,7 +5274,7 @@ TITLEEN:Scratch Mania! Stop This Finger!
 SUBTITLE:--常夏ハニーパイ
 SUBTITLEEN:--常夏ハニーパイ
 BPM:145
-WAVE:songs/Scratch Mania! Stop This Finger!/scratchmania_a2.opus
+WAVE:songs/Scratch Mania! Stop This Finger!/scratchmania_a2.ogg
 DEMOSTART:71.8794
 OFFSET:-0.707
 MAKER:goldenyoshi22
@@ -6096,7 +6096,7 @@ Easy: ☆4-
 */
 songdata.push(`TITLE:Spider Dance
 SUBTITLE:--Toby Fox (From UNDERTALE)
-WAVE:songs/Spider Dance/Spider Dance.opus
+WAVE:songs/Spider Dance/Spider Dance.ogg
 DEMOSTART:33
 BPM:230
 OFFSET:-0.124
@@ -6629,7 +6629,7 @@ Easy: ☆4+
 songdata.push(`TITLE:taiko bruh master
 SUBTITLE:--JohnathanTBG
 BPM:250.568
-WAVE:songs/taiko bruh master/taiko-bruh-master.opus
+WAVE:songs/taiko bruh master/taiko-bruh-master.ogg
 DEMOSTART:8
 OFFSET:0
 SONGVOL:100
@@ -7311,7 +7311,7 @@ Easy: ☆5-
 songdata.push(`TITLE:taiko bruh master II
 SUBTITLE:--JohnathanTBG
 BPM:240.71
-WAVE:songs/taiko bruh master II/taiko bruh master II.opus
+WAVE:songs/taiko bruh master II/taiko bruh master II.ogg
 OFFSET:0
 SONGVOL:100
 SEVOL:50
@@ -7915,7 +7915,7 @@ SCOREDIFF:0
 songdata.push(`TITLE:the lost dedicated
 SUBTITLE:--yst (From BOF2010)
 BPM:134
-WAVE:songs/the lost dedicated/tld.opus
+WAVE:songs/the lost dedicated/tld.ogg
 DEMOSTART:30.5068
 OFFSET:-0.059
 MAKER:goldenyoshi22

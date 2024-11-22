@@ -1,1 +1,1 @@
-FOR /F "tokens=*" %%G IN ('dir /s /b *.ogg') DO ffmpeg -i "%%G" -c:a libopus "%%~dpnG.opus"
+FOR /F "tokens=*" %%G IN ('dir /s /b *.ogg') DO ffmpeg -i "%%G" "%%~dpnG.mp3"

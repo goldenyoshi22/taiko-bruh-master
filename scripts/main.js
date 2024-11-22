@@ -32,6 +32,7 @@ function getEventTime(ev) {
 }
 
 let lastKeyPressTime = 0;
+document.body.addEventListener("keydown", getEventTime);
 document.body.addEventListener("touchstart", (ev) => {
     let { touches, changedTouches } = ev.originalEvent ?? ev;
     let touch = touches[0] ?? changedTouches[0];
@@ -1193,8 +1194,10 @@ function betterTimeout(func, ms) {
 }
 
 function controlInit(keys = ["d", "f", "j", "k"]) {
+if (selected.settings.controls != undefined) {
 for (let i = 0; i < selected.settings.controls.length; i++) {
 	Mousetrap.unbind(selected.settings.controls[i], "keydown");
+}
 }
 selected.settings.controls = keys;
 Mousetrap.bind(selected.settings.controls[0], function() {
@@ -1354,8 +1357,11 @@ Mousetrap.bind(selected.settings.controls[3], function() {
 }, "keydown")
 }
 
-if (!selected.settings.controls.includes("")) controlInit(selected.settings.controls);
-else controlInit(["d, f, j, k"]);
+if (selected.settings.controls != undefined) {
+	if (!selected.settings.controls.includes("") && selected.settings.controls.length == 4) controlInit(selected.settings.controls);
+	else controlInit(["d", "f", "j", "k"]);
+}
+else controlInit(["d", "f", "j", "k"]);
 
 Mousetrap.bind("shift+j+p", function() {convertLanguage("JP")})
 

@@ -361,7 +361,7 @@ function sload() {
   setTimeout(() => {
         for (let i = 0; i < songaudios.length; i++) {
             let audio = songaudios[i];
-            if (audio.readyState < 4) {
+            if (audio.readyState < 2) {
                 console.warn(`song ${audio.src} was not loaded, loading the mp3 version instead`);
                 let mp3Src = audio.src.replace(/\.ogg/, '.mp3');
                 audio.src = mp3Src;
@@ -502,7 +502,7 @@ cv.text(`(controls are ${(selected.settings.controls[0] + selected.settings.cont
 
 cv.text(tips[tipnum], ["#FF8080", "#80FFFF"], 768, 715, "pixel2", "35", "center")
 
-cv.text("α.1.2:3\nhttps://discord.gg/2D2XbD77HD", "#DDDDDD50", 0, 30, "monospace", "25", "left");
+cv.text("α.1.2:4\nhttps://discord.gg/2D2XbD77HD", "#DDDDDD50", 0, 30, "monospace", "25", "left");
 break;
 
 
@@ -840,8 +840,8 @@ lastTime[0] = performance.now()
 fpsarr[0].push(fps[0])
 fpsarr[0].shift();
 
-cv.text(`${Math.round(fps[1])}(${((fpsarr[1].reduce((sum, a) => sum + a, 0))/fpsarr[1].length).toFixed(1)})tps\n${Math.round(fps[0])} (${((fpsarr[0].reduce((sum, a) => sum + a, 0))/fpsarr[0].length).toFixed(1)})fps`, "#FFFFFF60", 0, 764-45, "monospace", "20", "left")
-cv.text(`${songtime.toFixed(3)} (${(4+songtime).toFixed(3)})\n${noteQueue[0] != undefined ? noteQueue[0].position().toFixed(3) + "\n" + ((noteQueue[0].position() - songtime + (pfoffset/1000))*1000).toFixed(2) + "ms" : ""}`, "#FFFFFF60", 1536, 764-45, "monospace", "20", "right")
+cv.text(`${Math.round(fps[1])}(${((fpsarr[1].reduce((sum, a) => sum + a, 0))/fpsarr[1].length).toFixed(1)})tps\n${Math.round(fps[0])} (${((fpsarr[0].reduce((sum, a) => sum + a, 0))/fpsarr[0].length).toFixed(1)})fps`, "#FFFFFF60", 0, 764-45, "monospace", "20", "left");
+cv.text(`♫⏲ ${songtime.toFixed(3)} (${(4+songtime).toFixed(3)})\n${noteQueue[0] != undefined ? noteQueue[0].position().toFixed(3) + "\n" + ((noteQueue[0].position() - songtime + (pfoffset/1000))*1000).toFixed(2) + "ms" : ""}`, "#FFFFFF60", 1536, 764-65, "monospace", "20", "right");
 
 	} catch (error) {
 		cv.rect("#00000090", 0, 250, 1536, 100)
@@ -928,7 +928,8 @@ if (hitting[0] != undefined && mode == 2) {
 	let typecor = [[1, 3], [2, 4], [1, 3], [2, 4], [1], [1], [1], [1]]
 	if (noteQueue[0] != undefined) {
 	let precInput = lastKeyPressTime/1000 - timeStarted/1000 - 0.004;
-	let precMS = noteQueue[0].time - precInput
+	//let precMS = noteQueue[0].time - precInput;
+	let precMS = noteQueue[0].time - noteQueue[0].position();
 	//console.log(`${noteQueue[0].time}\n${precInput}\n${precMS}`);
 	if (typecor[noteQueue[0].type - 1].includes(hitting[0]) && Math.abs(precMS) <= difficulties.hitwindow[selected.difficulty][2]) {
 		mshits.push([(precMS) * -1000, noteQueue[0].time])
@@ -1019,10 +1020,15 @@ fpsarr[1].shift();
 class note{
 	constructor(type, time, bpm, scroll, offset) {
 		this.type = type;
-		this.time = time;
 		this.started = timeStarted;
-		this.songoffset = offset != undefined ? offset : parseFloat(mdValue("OFFSET", songdata[selected.song]));
-		this.position = () => {if ((songaudios[selected.song].currentTime <= 0 && songtime < songaudios[selected.song].duration) || !selected.settings.customBuffer) return (performance.now() - timeStarted)/1000; else return (songtime + this.songoffset + 8)};
+		this.songoffset = parseFloat(mdValue("OFFSET", songdata[selected.song])) - 4;
+		this.time = time;
+		this.position = () => {
+			if ((songtime <= 0
+			&& songtime < songaudios[selected.song].duration)
+			|| !selected.settings.customBuffer) { return (performance.now() - timeStarted)/1000; }
+			else return (songtime + 4 + (this.songoffset + 4) - selected.settings.offset/1000);
+		};
 		this.bpm = bpm;
 		this.scroll = scroll;
 		this.hit = false;

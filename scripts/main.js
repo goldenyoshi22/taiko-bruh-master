@@ -1021,7 +1021,7 @@ class note{
 	constructor(type, time, bpm, scroll, offset) {
 		this.type = type;
 		this.started = timeStarted;
-		this.songoffset = parseFloat(mdValue("OFFSET", songdata[selected.song])) - 4;
+		this.songoffset = this.songoffset = songdata[selected.song] != undefined ? parseFloat(mdValue("OFFSET", songdata[selected.song])) - 4 : offset;
 		this.time = time;
 		this.position = () => {
 			if ((songtime <= 0

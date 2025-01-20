@@ -17,7 +17,7 @@ function noteDataToChart(a) {
 	bpm = mdValue("BPM", starSongWanted[0] != undefined ? songdata[starSongWanted[0]] : songdata[selected.song])
 	bpm *= (2 ** (selected.mods.songSpeed/12))
 	songlength = (a[a.length - 1].time) - 4;
-	console.log(songlength)
+	//console.log(songlength);
 	for (let i = 0; i < a.length; i++) {
 		if (["1", "2", "3", "4"].includes(a[i].type)) {
 			chart.push([a[i].type, (a[i].time - 4) / (60 / bpm)])
@@ -42,7 +42,7 @@ function starRating(c, full=false) {
 	}
 	
 	if (c[0] == undefined) chart = [[1, 0], [1, 1]];
-	console.log(chart);
+	//console.log(chart);
 	let bpmRatio = bpm / 120;
 	//let bpmRatio = 1;
 	nps = chart.length / chart[chart.length - 1][1]
@@ -98,7 +98,7 @@ function starRating(c, full=false) {
 	//console.log(`Strain: ${strain}\nSpeed: ${speed}\n\nstrainNotes: ${strainNotes.toString()}\nspeedNotes: ${speedNotes.toString()}\nTotal: ${star}`)
 	//console.log(strainDiffs);
 	//console.log(speedDiffs);
-	console.log(`Strain: ${strain}\nSpeed: ${speed}\nTotal: ${star}`);
+	//console.log(`Strain: ${strain}\nSpeed: ${speed}\nTotal: ${star}`);
 	return c[0] != undefined ? star : 0;
 }
 

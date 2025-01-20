@@ -1143,7 +1143,7 @@ function loadChart(ret=false, notPlaying=false, data=false) {
 					let pastBPM = currentBPM
 					currentBPM = parseFloat(ev[1]) * (2 ** (selected.mods.songSpeed / 12));
 					currentBeat = currentBeat * (currentBPM/pastBPM)
-					console.log(pastBPM, currentBPM, currentBeat)
+					//console.log(pastBPM, currentBPM, currentBeat);
 					let tempCurrentBPM = currentBPM
 					betterTimeout(() => {ingameBPM = tempCurrentBPM}, ((60/currentBPM*(currentBeat*4))-chartData.offset) * 1000)
 				break;
